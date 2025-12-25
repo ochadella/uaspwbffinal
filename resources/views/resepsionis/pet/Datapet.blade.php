@@ -412,6 +412,110 @@
             color: #ff4d4d;
         }
 
+        /* ================= MODAL TAMBAH PET ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 460px;
+            max-width: 95%;
+            background: #ffffff;
+            padding: 26px 26px 22px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-box h2 {
+            text-align: center;
+            margin: 0 0 10px;
+            color: #102f76;
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .modal-box label {
+            display: block;
+            margin-top: 10px;
+            margin-bottom: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #102f76;
+        }
+
+        .modal-box input,
+        .modal-box select,
+        .modal-box textarea {
+            width: 100%;
+            padding: 9px 10px;
+            border-radius: 8px;
+            border: 1px solid #d0d0d0;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .modal-box textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .modal-box input[readonly] {
+            background: #f4f4f4;
+        }
+
+        .modal-buttons {
+            margin-top: 18px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-cancel {
+            padding: 9px 16px;
+            border-radius: 8px;
+            border: none;
+            background: #6c757d;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .btn-submit {
+            padding: 9px 18px;
+            border-radius: 8px;
+            border: none;
+            background: #f9a01b;
+            color: #102f76;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background: #ffba4c;
+        }
+
         /* ================= RESPONSIVE ================= */
         @media (max-width: 1100px) {
             .layout {
@@ -436,7 +540,7 @@
 <body>
 
 @php
-    $user = auth()->user();
+    $user        = auth()->user();
     $displayName = $user->nama ?? $user->name ?? 'User';
     $displayRole = ucfirst($user->role ?? 'Resepsionis');
     $initial     = strtoupper(mb_substr($displayName, 0, 1));
@@ -460,13 +564,15 @@
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -542,6 +648,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -560,7 +678,7 @@
         <!-- CONTENT -->
         <div class="container">
 
-            <a href="{{ route('resepsionis.pet.create') }}" class="btn-add">+ Tambah Pet</a>
+            <!-- BUTTON TAMBAH PET (BUKA MODAL) -->
             <a href="{{ route('dashboard.resepsionis') }}" class="btn-back">← Kembali</a>
 
             <table>
@@ -581,26 +699,37 @@
                     @php $no = 1; @endphp
 
                     @forelse($rows as $row)
-                        <tr>
-                            <td>{{ $no++ }}</td>
-                            <td>{{ $row['nama'] ?? '-' }}</td>
-                            <td>{{ $row['nama_pemilik'] ?? '-' }}</td>
-                            <td>{{ $row['nama_ras'] ?? '-' }}</td>
-                            <td>{{ $row['jenis_kelamin'] ?? '-' }}</td>
-                            <td>{{ $row['wa_pemilik'] ?? '-' }}</td>
-                            <td>{{ $row['alamat_pemilik'] ?? '-' }}</td>
+                            <tr>
+                                <td>{{ $no++ }}</td>
+                                <td>{{ $row->nama ?? '-' }}</td>
+                                <td>{{ $row->nama_pemilik ?? '-' }}</td>
+                                <td>{{ $row->nama_ras ?? '-' }}</td>
+                                <td>{{ $row->jenis_kelamin ?? '-' }}</td>
+                                <td>{{ $row->wa_pemilik ?? '-' }}</td>
+                                <td>{{ $row->alamat_pemilik ?? '-' }}</td>
+
 
                             <td>
                                 <div class="action-icons">
                                     <!-- EDIT -->
-                                    <a class="icon-btn"
-                                       href="{{ route('resepsionis.pet.edit', $row['idpet']) }}">
+                                    <a href="javascript:void(0)"
+                                    class="icon-btn"
+                                    title="Edit Pet"
+                                    onclick="openEditModal(this)"
+                                    data-idpet="{{ $row->idpet }}"
+                                    data-nama="{{ $row->nama }}"
+                                    data-idpemilik="{{ $row->idpemilik }}"
+                                    data-nama-pemilik="{{ $row->nama_pemilik }}"
+                                    data-wa="{{ $row->wa_pemilik }}"
+                                    data-alamat="{{ $row->alamat_pemilik }}"
+                                    data-idras="{{ $row->idras }}"
+                                    data-jenis-kelamin="{{ $row->jenis_kelamin }}">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
 
                                     <!-- DELETE -->
                                     <a class="icon-btn delete"
-                                       href="{{ route('resepsionis.pet.delete', $row['idpet']) }}"
+                                       href="{{ route('resepsionis.pet.delete', $row->idpet) }}"
                                        onclick="return confirm('Hapus data pet ini?')">
                                         <i class="bi bi-trash"></i>
                                     </a>
@@ -620,6 +749,239 @@
     </div><!-- /main-area -->
 
 </div><!-- /layout -->
+
+<!-- ==================== MODAL TAMBAH PET ==================== -->
+<div id="modalAddPet" class="modal">
+    <div class="modal-box">
+        <h2>Tambah Pet</h2>
+
+        <form id="formAddPet" method="POST" action="{{ route('resepsionis.pet.store') }}">
+            @csrf
+
+            <label for="add_nama_pet">Nama Pet *</label>
+            <input type="text"
+                   id="add_nama_pet"
+                   name="nama"
+                   required
+                   placeholder="Nama hewan">
+
+            <label for="add_idpemilik">Pemilik *</label>
+            <select id="add_idpemilik"
+                    name="idpemilik"
+                    required
+                    onchange="onPemilikChange(this)">
+                <option value="">-- Pilih Pemilik --</option>
+                @foreach($pemilik as $p)
+                    <option value="{{ $p->idpemilik }}"
+                            data-wa="{{ $p->no_wa }}"
+                            data-alamat="{{ $p->alamat }}">
+                        {{ $p->nama }}
+                    </option>
+                @endforeach
+            </select>
+
+            <label>No WA Pemilik</label>
+            <input type="text"
+                   id="add_no_wa"
+                   readonly
+                   placeholder="Otomatis dari pemilik">
+
+            <label>Alamat Pemilik</label>
+            <textarea id="add_alamat"
+                      readonly
+                      placeholder="Otomatis dari pemilik"></textarea>
+
+            <label for="add_idras">Ras *</label>
+            <select id="add_idras"
+                    name="idras"
+                    required>
+                <option value="">-- Pilih Ras --</option>
+                @foreach($ras as $r)
+                    <option value="{{ $r->idras }}">{{ $r->nama_ras }}</option>
+                @endforeach
+            </select>
+
+            <label for="add_jenis_kelamin">Jenis Kelamin *</label>
+            <select id="add_jenis_kelamin"
+                    name="jenis_kelamin"
+                    required>
+                <option value="">-- Pilih Jenis Kelamin --</option>
+                <option value="Jantan">Jantan</option>
+                <option value="Betina">Betina</option>
+            </select>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeAddModal()">Batal</button>
+                <button type="submit" class="btn-submit">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL EDIT PET ==================== -->
+<div id="modalEditPet" class="modal">
+    <div class="modal-box">
+        <h2>Edit Pet</h2>
+
+        <form id="formEditPet" method="POST" action="">
+            @csrf
+            <input type="hidden" id="edit_idpet" name="idpet">
+
+            <label for="edit_nama_pet">Nama Pet *</label>
+            <input type="text"
+                   id="edit_nama_pet"
+                   name="nama"
+                   required
+                   placeholder="Nama hewan">
+
+            <label for="edit_idpemilik">Pemilik *</label>
+            <select id="edit_idpemilik"
+                    name="idpemilik"
+                    required
+                    onchange="onEditPemilikChange(this)">
+                <option value="">-- Pilih Pemilik --</option>
+                @foreach($pemilik as $p)
+                    <option value="{{ $p->idpemilik }}"
+                            data-wa="{{ $p->no_wa }}"
+                            data-alamat="{{ $p->alamat }}">
+                        {{ $p->nama }}
+                    </option>
+                @endforeach
+            </select>
+
+            <label>No WA Pemilik</label>
+            <input type="text"
+                   id="edit_no_wa"
+                   readonly
+                   placeholder="Otomatis dari pemilik">
+
+            <label>Alamat Pemilik</label>
+            <textarea id="edit_alamat"
+                      readonly
+                      placeholder="Otomatis dari pemilik"></textarea>
+
+            <label for="edit_idras">Ras *</label>
+            <select id="edit_idras"
+                    name="idras"
+                    required>
+                <option value="">-- Pilih Ras --</option>
+                @foreach($ras as $r)
+                    <option value="{{ $r->idras }}">{{ $r->nama_ras }}</option>
+                @endforeach
+            </select>
+
+            <label for="edit_jenis_kelamin">Jenis Kelamin *</label>
+            <select id="edit_jenis_kelamin"
+                    name="jenis_kelamin"
+                    required>
+                <option value="">-- Pilih Jenis Kelamin --</option>
+                <option value="Jantan">Jantan</option>
+                <option value="Betina">Betina</option>
+            </select>
+
+            <div class="modal-buttons">
+                <button type="button" class="btn-cancel" onclick="closeEditModal()">Batal</button>
+                <button type="submit" class="btn-submit">Simpan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Buka modal tambah pet
+    function openAddModal() {
+        const modal = document.getElementById('modalAddPet');
+        const form  = document.getElementById('formAddPet');
+
+        if (form) {
+            form.reset();
+        }
+        const noWaEl    = document.getElementById('add_no_wa');
+        const alamatEl  = document.getElementById('add_alamat');
+
+        if (noWaEl)   noWaEl.value   = '';
+        if (alamatEl) alamatEl.value = '';
+
+        modal.classList.add('show');
+    }
+
+    // ================= MODAL EDIT PET =================
+    function openEditModal(el) {
+        const idpet        = el.getAttribute('data-idpet');
+        const nama         = el.getAttribute('data-nama');
+        const idpemilik    = el.getAttribute('data-idpemilik');
+        const namaPemilik  = el.getAttribute('data-nama-pemilik');
+        const wa           = el.getAttribute('data-wa');
+        const alamat       = el.getAttribute('data-alamat');
+        const idras        = el.getAttribute('data-idras');
+        const jenisKelamin = el.getAttribute('data-jenis-kelamin');
+
+        // Isi form edit
+        document.getElementById('edit_idpet').value = idpet;
+        document.getElementById('edit_nama_pet').value = nama;
+        document.getElementById('edit_idpemilik').value = idpemilik;
+        document.getElementById('edit_no_wa').value = wa;
+        document.getElementById('edit_alamat').value = alamat;
+        document.getElementById('edit_idras').value = idras;
+        document.getElementById('edit_jenis_kelamin').value = jenisKelamin;
+
+        // Set action form
+        const form = document.getElementById('formEditPet');
+        form.action = '/resepsionis/pet/update/' + idpet;
+
+        // Buka modal
+        document.getElementById('modalEditPet').classList.add('show');
+    }
+
+    function closeEditModal() {
+        document.getElementById('modalEditPet').classList.remove('show');
+        document.getElementById('formEditPet').reset();
+    }
+
+// Ketika memilih pemilik di modal EDIT → otomatis isi No WA & Alamat
+function onEditPemilikChange(selectEl) {
+    const opt      = selectEl.options[selectEl.selectedIndex];
+    const wa       = opt.getAttribute('data-wa') || '';
+    const alamat   = opt.getAttribute('data-alamat') || '';
+
+    document.getElementById('edit_no_wa').value = wa;
+    document.getElementById('edit_alamat').value = alamat;
+}
+
+    // Tutup modal tambah pet
+    function closeAddModal() {
+        const modal = document.getElementById('modalAddPet');
+        modal.classList.remove('show');
+    }
+
+    // Ketika memilih pemilik → otomatis isi No WA & Alamat (readonly)
+    function onPemilikChange(selectEl) {
+        const opt      = selectEl.options[selectEl.selectedIndex];
+        const wa       = opt.getAttribute('data-wa') || '';
+        const alamat   = opt.getAttribute('data-alamat') || '';
+
+        const noWaEl   = document.getElementById('add_no_wa');
+        const alamatEl = document.getElementById('add_alamat');
+
+        if (noWaEl)   noWaEl.value   = wa;
+        if (alamatEl) alamatEl.value = alamat;
+    }
+
+    // Tutup modal jika klik area gelap di luar box
+    window.addEventListener('click', function (e) {
+        const modalAdd  = document.getElementById('modalAddPet');
+        const modalEdit = document.getElementById('modalEditPet');
+        
+        if (e.target === modalAdd) {
+            closeAddModal();
+        }
+        if (e.target === modalEdit) {
+            closeEditModal();
+        }
+    });
+
+    
+</script>
 
 </body>
 </html>

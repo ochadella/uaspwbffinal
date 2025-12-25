@@ -7,103 +7,101 @@ use Illuminate\Support\Facades\DB;
 
 class RasHewanController extends Controller
 {
-    // ✅ Tampilkan daftar ras + data jenis hewan
+    /* ===========================================================
+       INDEX — Menampilkan semua ras + jenis hewan
+    ============================================================ */
     public function index()
     {
-        // Ambil semua jenis hewan (untuk dropdown)
-        $listJenis = DB::table('jenis_hewan')->get();
+        $listJenis = DB::table('jenis_hewan')
+                        ->orderBy('idjenis_hewan')
+                        ->get();
 
-        // Ambil semua ras + join nama jenis
         $listRas = DB::table('ras_hewan')
             ->join('jenis_hewan', 'ras_hewan.idjenis_hewan', '=', 'jenis_hewan.idjenis_hewan')
-            ->select('ras_hewan.idras_hewan', 'ras_hewan.nama_ras', 'jenis_hewan.nama_jenis_hewan')
+            ->select(
+                'ras_hewan.idras_hewan',
+                'ras_hewan.nama_ras',
+                'ras_hewan.idjenis_hewan',
+                'jenis_hewan.nama_jenis_hewan'
+            )
             ->orderBy('ras_hewan.idras_hewan', 'asc')
             ->get();
 
-        // Kirim data ke view
-        return view('dokter.ras.Datarashewan', [
-            'listRas' => $listRas,
-            'listJenis' => $listJenis,
-            'editData' => null,
-        ]);
+        return view('dokter.ras.datarashewan', compact('listRas', 'listJenis'));
     }
 
-    // ⭐⭐⭐ DITAMBAHKAN — buka form tambah ras ⭐⭐⭐
+    /* ===========================================================
+       CREATE — Tidak dipakai karena pakai MODAL POPUP
+    ============================================================ */
     public function create()
     {
-        // Ambil semua jenis hewan untuk dropdown
-        $listJenis = DB::table('jenis_hewan')->get();
-
-        // Ambil semua ras seperti biasa
-        $listRas = DB::table('ras_hewan')
-            ->join('jenis_hewan', 'ras_hewan.idjenis_hewan', '=', 'jenis_hewan.idjenis_hewan')
-            ->select('ras_hewan.idras_hewan', 'ras_hewan.nama_ras', 'jenis_hewan.nama_jenis_hewan')
-            ->orderBy('ras_hewan.idras_hewan', 'asc')
-            ->get();
-
-        // Tampilkan view tanpa editData
-        return view('dokter.ras.Datarashewan', [
-            'listRas'   => $listRas,
-            'listJenis' => $listJenis,
-            'editData'  => null,
-        ]);
+        return redirect()->route('dokter.ras.data');
     }
 
-    // ✅ Simpan data baru
+    /* ===========================================================
+       STORE — Tambah ras via Modal (JSON response)
+       — PLEK KETIPLEK LOGIKA DOKTER
+    ============================================================ */
     public function store(Request $request)
     {
         $request->validate([
-            'nama_ras' => 'required|string|max:100',
+            'nama_ras'      => 'required|string|max:100',
             'idjenis_hewan' => 'required|integer',
         ]);
 
+        // === ⚠ WAJIB: GENERATE ID RAS MANUAL (tanpa auto increment) ===
+        $nextId = (DB::table('ras_hewan')->max('idras_hewan') ?? 0) + 1;
+
         DB::table('ras_hewan')->insert([
-            'nama_ras' => $request->nama_ras,
-            'idjenis_hewan' => $request->idjenis_hewan,
+            'idras_hewan'   => $nextId,
+            'nama_ras'      => $request->nama_ras,
+            'idjenis_hewan' => $request->idjenis_hewan
         ]);
 
-        return redirect()->route('dokter.ras.data')->with('success', 'Ras hewan berhasil ditambahkan');
+        return response()->json(['success' => true]);
     }
 
-    // ✅ Edit data (tampilkan data lama untuk form)
-    public function edit($id)
-    {
-        $editData = DB::table('ras_hewan')->where('idras_hewan', $id)->first();
-        $listJenis = DB::table('jenis_hewan')->get();
-
-        $listRas = DB::table('ras_hewan')
-            ->join('jenis_hewan', 'ras_hewan.idjenis_hewan', '=', 'jenis_hewan.idjenis_hewan')
-            ->select('ras_hewan.idras_hewan', 'ras_hewan.nama_ras', 'jenis_hewan.nama_jenis_hewan')
-            ->orderBy('ras_hewan.idras_hewan', 'asc')
-            ->get();
-
-        return view('dokter.ras.Datarashewan', [
-            'listRas' => $listRas,
-            'listJenis' => $listJenis,
-            'editData' => $editData,
-        ]);
-    }
-
-    // ✅ Update data
+    /* ===========================================================
+       UPDATE — Edit ras via modal (JSON response)
+       — Sama persis flow Dokter
+    ============================================================ */
     public function update(Request $request, $id)
     {
         $request->validate([
-            'nama_ras' => 'required|string|max:100',
+            'nama_ras'      => 'required|string|max:100',
             'idjenis_hewan' => 'required|integer',
         ]);
 
-        DB::table('ras_hewan')->where('idras_hewan', $id)->update([
-            'nama_ras' => $request->nama_ras,
-            'idjenis_hewan' => $request->idjenis_hewan,
-        ]);
+        $ras = DB::table('ras_hewan')->where('idras_hewan', $id)->first();
 
-        return redirect()->route('dokter.ras.data')->with('success', 'Data ras hewan berhasil diperbarui');
+        if (!$ras) {
+            return response()->json(['success' => false, 'message' => 'Ras hewan tidak ditemukan']);
+        }
+
+        DB::table('ras_hewan')
+            ->where('idras_hewan', $id)
+            ->update([
+                'nama_ras'      => $request->nama_ras,
+                'idjenis_hewan' => $request->idjenis_hewan,
+            ]);
+
+        return response()->json(['success' => true]);
     }
 
-    // ✅ Hapus data
+    /* ===========================================================
+       DELETE RAS HEWAN
+       — Sama gaya Dokter (redirect back)
+    ============================================================ */
     public function destroy($id)
     {
+        $ras = DB::table('ras_hewan')->where('idras_hewan', $id)->first();
+
+        if (!$ras) {
+            return back()->with('error', 'Ras hewan tidak ditemukan');
+        }
+
         DB::table('ras_hewan')->where('idras_hewan', $id)->delete();
-        return redirect()->route('dokter.ras.data')->with('success', 'Data ras hewan berhasil dihapus');
+
+        return back()->with('success', 'Ras hewan berhasil dihapus');
     }
 }

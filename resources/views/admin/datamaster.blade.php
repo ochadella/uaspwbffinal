@@ -516,6 +516,18 @@
     $displayName = $user->nama ?? $user->name ?? 'User';
     $displayRole = ucfirst($user->role ?? 'Admin');
     $initial = strtoupper(mb_substr($displayName, 0, 1));
+    
+    // ⭐ TAMBAHKAN INI — Tentukan route profile berdasarkan role
+    $profileRoute = '#';
+    if ($user && $user->role === 'admin') {
+        $profileRoute = route('admin.profile');
+    } elseif ($user && $user->role === 'dokter') {
+        $profileRoute = route('dokter.profile');
+    } elseif ($user && $user->role === 'perawat') {
+        $profileRoute = route('perawat.profile');
+    } elseif ($user && $user->role === 'resepsionis') {
+        $profileRoute = route('resepsionis.profile');
+    }
 @endphp
 
 <!-- TOP NAVBAR -->
@@ -536,13 +548,15 @@
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -616,9 +630,20 @@
             <a href="{{ route('admin.kodetindakan.data') }}" class="sidebar-link">
                 <i class="bi bi-code-square"></i> <span>Kode Tindakan</span>
             </a>
-        </div>
+            </div>
 
-        <div class="sidebar-bottom">
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom"> 
+        <div class="sidebar-bottom"> </div>
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
     </aside>

@@ -34,8 +34,23 @@ class UserController extends Controller
                 'role' => 'required'
             ]);
 
-            // Buat iduser manual (karena tidak auto increment)
-            $nextId = (User::max('iduser') ?? 0) + 1;
+            /* ============================
+               FIX ID MANUAL TANPA LONCAT
+               ============================ */
+            $existing = User::pluck('iduser')->toArray();
+            $nextId = 1;
+
+            while (in_array($nextId, $existing)) {
+                $nextId++;
+            }
+
+            $nextId = User::max("iduser") + 1;
+            $nextId = User::max("iduser") + 1;
+            $nextId = User::max("iduser") + 1;
+            $nextId = User::max("iduser") + 1;
+
+            // FIX final memastikan ID benar
+            $nextId = (User::max("iduser") ?? 0) + 1;
 
             User::create([
                 'iduser'   => $nextId,
@@ -43,10 +58,9 @@ class UserController extends Controller
                 'email'    => $req->email,
                 'password' => Hash::make($req->password),
                 'role'     => $req->role,
-                'status'   => 'aktif' // DEFAULT AKTIF
+                'status'   => 'aktif'
             ]);
 
-            // Cek apakah request AJAX
             if ($req->ajax() || $req->wantsJson()) {
                 return response()->json(['success' => true]);
             }
@@ -69,9 +83,9 @@ class UserController extends Controller
         try {
             $req->validate([
                 'edit_id' => 'required',
-                'nama' => 'required',
-                'email' => 'required|email',
-                'role' => 'required'
+                'nama'    => 'required',
+                'email'   => 'required|email',
+                'role'    => 'required'
             ]);
 
             $user = User::where('iduser', $req->edit_id)->first();
@@ -83,7 +97,6 @@ class UserController extends Controller
                 return back()->with('error', 'User tidak ditemukan');
             }
 
-            // Cek email duplikat
             $cekEmail = User::where('email', $req->email)
                             ->where('iduser', '!=', $req->edit_id)
                             ->first();
@@ -95,13 +108,39 @@ class UserController extends Controller
                 return back()->with('error', 'Email sudah digunakan');
             }
 
+            /* ============================
+               UPDATE DATA USER
+            ============================ */
             $user->update([
                 'nama' => $req->nama,
                 'email' => $req->email,
                 'role' => $req->role
             ]);
 
-            // Cek apakah request AJAX
+            /* ==================================================
+               SINKRON UPDATE JIKA USER INI MEMILIKI DATA PEMILIK
+               (idpemilik bernilai)
+            ==================================================== */
+            if ($user->idpemilik !== null) {
+                DB::table('pemilik')->where('idpemilik', $user->idpemilik)->update([
+                    'nama'  => $req->nama,
+                    'email' => $req->email
+                ]);
+            }
+
+            /* ==================================================
+               SINKRONKAN KE USER LAIN JIKA DIA PEMILIK
+               idpemilik = iduser pemilik yang terhubung
+            ==================================================== */
+            $userPemilik = User::where('idpemilik', $req->edit_id)->first();
+
+            if ($userPemilik) {
+                $userPemilik->update([
+                    'nama'  => $req->nama,
+                    'email' => $req->email,
+                ]);
+            }
+
             if ($req->ajax() || $req->wantsJson()) {
                 return response()->json(['success' => true]);
             }
@@ -144,7 +183,6 @@ class UserController extends Controller
     public function delete($id)
     {
         try {
-            // Perbaikan utama: cegah error jika id NULL / tidak ada
             if (!$id) {
                 return redirect()->route('admin.user.data')->with('error', 'ID user tidak valid');
             }
@@ -155,10 +193,13 @@ class UserController extends Controller
                 return redirect()->route('admin.user.data')->with('error', 'User tidak ditemukan');
             }
 
-            // ⭐ PERBAIKAN: Hapus relasi di tabel role_user DULU sebelum hapus user
             DB::table('role_user')->where('iduser', $id)->delete();
 
-            // Baru hapus user
+            /* ==================================================
+               SINKRON DELETE: HAPUS PEMILIK JIKA DIA PEMILIK
+            ==================================================== */
+            DB::table('pemilik')->where('iduser', $id)->delete();
+
             $user->delete();
 
             return redirect()->route('admin.user.data')->with('success', 'User berhasil dihapus');
@@ -180,8 +221,7 @@ class UserController extends Controller
                 return response()->json(['success' => false, 'message' => 'User tidak ditemukan']);
             }
 
-            // Toggle status
-            $user->status = ($user->status === 'aktif') ? 'non-aktif' : 'aktif';
+            $user->status = ($user->status === 'aktif') ? 'nonaktif' : 'aktif';
             $user->save();
 
             return response()->json([

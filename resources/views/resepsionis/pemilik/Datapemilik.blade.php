@@ -167,7 +167,7 @@
             gap: 22px;
         }
 
-        /* ---------- SIDEBAR (SAMA PERSIS DATA USER) ---------- */
+        /* ---------- SIDEBAR (SAMA PERSIS) ---------- */
         .sidebar {
             width: 215px;
             border-radius: 24px;
@@ -412,6 +412,98 @@
             color: #ff4d4d;
         }
 
+        /* ================= MODAL (ADD + EDIT, SAMA RAS) ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 420px;
+            background: white;
+            padding: 26px;
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-box h2 {
+            text-align: center;
+            color: #102f76;
+            margin-top: 0;
+        }
+
+        .modal-box label {
+            font-weight: 600;
+            color: #102f76;
+            display: block;
+            margin-top: 12px;
+        }
+
+        .modal-box input,
+        .modal-box textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        .modal-box textarea {
+            resize: vertical;
+            min-height: 70px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            padding: 10px 16px;
+            background: #6c757d;
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .btn-submit {
+            padding: 10px 16px;
+            background: #f9a01b;
+            border: none;
+            color: #102f76;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background: #ffba4c;
+        }
+
         /* ================= RESPONSIVE ================= */
         @media (max-width: 1100px) {
             .layout {
@@ -455,18 +547,23 @@
     <div class="nav-center">
         <div class="nav-search">
             <i class="bi bi-search"></i>
-            <input type="text" placeholder="Cari menu atau data pemilik...">
+            <input type="text"
+                   id="searchInput"
+                   placeholder="Cari menu atau data pemilik..."
+                   onkeyup="searchTable()">
         </div>
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -542,6 +639,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -560,10 +669,9 @@
         <!-- KONTEN UTAMA -->
         <div class="container">
 
-            <a href="#" class="btn-add">+ Tambah Pemilik</a>
             <a href="{{ route('admin.datamaster') }}" class="btn-back">← Kembali</a>
 
-            <table>
+            <table id="pemilikTable">
                 <thead>
                     <tr>
                         <th>ID</th>
@@ -575,32 +683,44 @@
                 </thead>
 
                 <tbody>
-                    @foreach($pemilik as $p)
+                    @forelse($pemilik as $p)
                         <tr>
-                            <td>{{ $p->idpemilik }}</td>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $p->nama }}</td>
                             <td>{{ $p->no_wa }}</td>
                             <td>{{ $p->alamat }}</td>
 
-                            <!-- ACTION ICONS -->
                             <td>
                                 <div class="action-icons">
-                                    <!-- EDIT -->
-                                    <a class="icon-btn"
-                                       href="{{ route('resepsionis.pemilik.edit', $p->idpemilik) }}">
+                                    <!-- EDIT PAKAI MODAL -->
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn"
+                                       title="Edit Pemilik"
+                                       onclick="openEditModal(this)"
+                                       data-id="{{ $p->idpemilik }}"
+                                       data-nama="{{ $p->nama }}"
+                                       data-wa="{{ $p->no_wa }}"
+                                       data-alamat="{{ $p->alamat }}">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
 
-                                    <!-- DELETE -->
-                                    <a class="icon-btn"
-                                       href="{{ route('resepsionis.pemilik.delete', $p->idpemilik) }}"
-                                       onclick="return confirm('Yakin hapus data ini?')">
+                                    <!-- DELETE PAKAI JS + FORM HIDDEN -->
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn delete"
+                                       title="Hapus Pemilik"
+                                       onclick="deletePemilik('{{ $p->idpemilik }}')">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#555;">
+                                Belum ada data
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
 
             </table>
@@ -609,6 +729,185 @@
     </div><!-- /main-area -->
 
 </div><!-- /layout -->
+
+<!-- ==================== MODAL TAMBAH PEMILIK ==================== -->
+<div id="modalAdd" class="modal">
+    <div class="modal-box">
+        <h2>Tambah Pemilik</h2>
+
+        <form method="POST"
+              action="{{ route('resepsionis.pemilik.store') }}"
+              id="formAddPemilik">
+            @csrf
+
+            <label>Nama *</label>
+            <input type="text"
+                   name="nama"
+                   id="add_nama"
+                   required
+                   placeholder="Nama pemilik">
+
+            <label>No WA *</label>
+            <input type="text"
+                   name="no_wa"
+                   id="add_no_wa"
+                   required
+                   placeholder="Nomor WhatsApp">
+
+            <label>Alamat *</label>
+            <textarea name="alamat"
+                      id="add_alamat"
+                      required
+                      placeholder="Alamat lengkap"></textarea>
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeAddModal()" class="btn-cancel">
+                    Batal
+                </button>
+                <button type="submit" class="btn-submit">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL EDIT PEMILIK ==================== -->
+<div id="modalEdit" class="modal">
+    <div class="modal-box">
+        <h2>Edit Pemilik</h2>
+
+        <form method="POST"
+              action=""
+              id="formEditPemilik">
+            @csrf
+            <input type="hidden" name="edit_id" id="edit_id">
+
+            <label>Nama *</label>
+            <input type="text"
+                   name="nama"
+                   id="edit_nama"
+                   required>
+
+            <label>No WA *</label>
+            <input type="text"
+                   name="no_wa"
+                   id="edit_no_wa"
+                   required>
+
+            <label>Alamat *</label>
+            <textarea name="alamat"
+                      id="edit_alamat"
+                      required></textarea>
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeEditModal()" class="btn-cancel">
+                    Batal
+                </button>
+                <button type="submit" class="btn-submit">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== FORM TERSEMBUNYI UNTUK DELETE ==================== -->
+<form id="deleteForm" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+
+<script>
+    // ================= SEARCH TABLE (NAMA, NO WA, ALAMAT) =================
+    function searchTable() {
+        const input  = document.getElementById("searchInput");
+        const filter = input.value.toUpperCase();
+        const table  = document.getElementById("pemilikTable");
+        const tr     = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            const tdNama   = tr[i].getElementsByTagName("td")[1];
+            const tdWa     = tr[i].getElementsByTagName("td")[2];
+            const tdAlamat = tr[i].getElementsByTagName("td")[3];
+
+            if (tdNama || tdWa || tdAlamat) {
+                const txtNama   = (tdNama.textContent   || tdNama.innerText).toUpperCase();
+                const txtWa     = (tdWa.textContent     || tdWa.innerText).toUpperCase();
+                const txtAlamat = (tdAlamat.textContent || tdAlamat.innerText).toUpperCase();
+
+                if (
+                    txtNama.indexOf(filter)   > -1 ||
+                    txtWa.indexOf(filter)     > -1 ||
+                    txtAlamat.indexOf(filter) > -1
+                ) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    // ================= MODAL TAMBAH =================
+    function openAddModal() {
+        document.getElementById('add_nama').value   = '';
+        document.getElementById('add_no_wa').value  = '';
+        document.getElementById('add_alamat').value = '';
+        document.getElementById('modalAdd').classList.add('show');
+    }
+
+    function closeAddModal() {
+        document.getElementById('modalAdd').classList.remove('show');
+        document.getElementById('formAddPemilik').reset();
+    }
+
+    // ================= MODAL EDIT =================
+    function openEditModal(el) {
+        const id     = el.getAttribute('data-id');
+        const nama   = el.getAttribute('data-nama');
+        const no_wa  = el.getAttribute('data-wa');
+        const alamat = el.getAttribute('data-alamat');
+
+        document.getElementById('edit_id').value      = id;
+        document.getElementById('edit_nama').value    = nama;
+        document.getElementById('edit_no_wa').value   = no_wa;
+        document.getElementById('edit_alamat').value  = alamat;
+
+        const form = document.getElementById('formEditPemilik');
+        form.action = '/resepsionis/pemilik/update/' + id;
+
+        document.getElementById('modalEdit').classList.add('show');
+    }
+
+    function closeEditModal() {
+        document.getElementById('modalEdit').classList.remove('show');
+        document.getElementById('formEditPemilik').reset();
+    }
+
+    // ================= DELETE PEMILIK =================
+    function deletePemilik(id) {
+        if (confirm('Apakah Anda yakin ingin menghapus data pemilik ini?')) {
+            const form = document.getElementById('deleteForm');
+            form.action = '/resepsionis/pemilik/delete/' + id;
+            form.submit();
+        }
+    }
+
+    // ================= TUTUP MODAL KALAU KLIK DI LUAR BOX =================
+    window.onclick = function(event) {
+        const modalAdd  = document.getElementById('modalAdd');
+        const modalEdit = document.getElementById('modalEdit');
+
+        if (event.target === modalAdd) {
+            closeAddModal();
+        }
+        if (event.target === modalEdit) {
+            closeEditModal();
+        }
+    }
+</script>
 
 </body>
 </html>

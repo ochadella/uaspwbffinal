@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -19,68 +20,42 @@ class SiteController extends Controller
     }
 
     /**
-     * Halaman Login
+     * Halaman Login — DINONAKTIFKAN
      */
     public function login()
     {
-        if (Auth::check()) {
-            return $this->redirectByRole(Auth::user());
-        }
-        return view('interface.login');
+        // Mencegah bentrok dengan LoginController
+        abort(404);
     }
 
     /**
-     * Proses Login dengan redirect otomatis berdasarkan role
+     * Proses Login — DINONAKTIFKAN
      */
     public function loginPost(Request $request)
     {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-
-        // Cari user berdasarkan email
-        $user = User::where('email', $request->email)->first();
-
-        // Cek apakah user ada dan password benar
-        if ($user && Hash::check($request->password, $user->password)) {
-            
-            // Login user
-            Auth::login($user);
-            
-            // Regenerate session untuk keamanan
-            $request->session()->regenerate();
-
-            // ⭐ REDIRECT OTOMATIS BERDASARKAN ROLE
-            return $this->redirectByRole($user);
-        }
-
-        // Jika login gagal
-        return back()->withErrors([
-            'email' => 'Email atau password salah.',
-        ])->withInput();
+        // Mencegah bentrok dengan LoginController
+        abort(404);
     }
 
     /**
-     * ⭐ FUNGSI REDIRECT BERDASARKAN ROLE
+     * Redirect Role — TETAP AKTIF
      */
     private function redirectByRole($user)
     {
         switch ($user->role) {
             case 'admin':
                 return redirect()->route('interface.dashboard');
-                
+
             case 'dokter':
                 return redirect()->route('interface.dashboard_dokter');
-                
+
             case 'perawat':
                 return redirect()->route('interface.dashboard_perawat');
-                
+
             case 'resepsionis':
                 return redirect()->route('dashboard.resepsionis');
-                
+
             default:
-                // Jika role tidak dikenali, redirect ke dashboard admin
                 return redirect()->route('interface.dashboard');
         }
     }
@@ -91,7 +66,6 @@ class SiteController extends Controller
     public function logout(Request $request)
     {
         Auth::logout();
-        
         $request->session()->invalidate();
         $request->session()->regenerateToken();
         
@@ -111,8 +85,10 @@ class SiteController extends Controller
      */
     public function dashboardResepsionis()
     {
-        $namaResepsionis = auth()->user()->nama ?? auth()->user()->email ?? 'Resepsionis';
-        $total_antrian = 5;
-        return view('interface.dashboard_resepsionis', compact('namaResepsionis', 'total_antrian'));
+        $total_antrian = DB::table('temu_dokter')
+            ->whereIn('status', ['Menunggu', 'Dalam Antrian', 'Sedang Diperiksa'])
+            ->count();
+
+        return view('interface.dashboard_resepsionis', compact('total_antrian'));
     }
 }

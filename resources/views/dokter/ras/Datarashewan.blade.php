@@ -167,7 +167,7 @@
             gap: 22px;
         }
 
-        /* ---------- SIDEBAR (SAMA PERSIS SEPERTI DATA USER) ---------- */
+        /* ---------- SIDEBAR (SAMA SEPERTI HALAMAN LAIN) ---------- */
         .sidebar {
             width: 215px;
             border-radius: 24px;
@@ -412,6 +412,93 @@
             color: #ff4d4d;
         }
 
+        /* ================= MODAL (ADD + EDIT, SAMA DOKTER) ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 420px;
+            background: white;
+            padding: 26px;
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-box h2 {
+            text-align: center;
+            color: #102f76;
+            margin-top: 0;
+        }
+
+        .modal-box label {
+            font-weight: 600;
+            color: #102f76;
+            display: block;
+            margin-top: 12px;
+        }
+
+        .modal-box input,
+        .modal-box select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            padding: 10px 16px;
+            background: #6c757d;
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .btn-submit {
+            padding: 10px 16px;
+            background: #f9a01b;
+            border: none;
+            color: #102f76;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background: #ffba4c;
+        }
+
         /* ================= RESPONSIVE ================= */
         @media (max-width: 1100px) {
             .layout {
@@ -439,7 +526,7 @@
     $user = auth()->user();
     $displayName = $user->nama ?? $user->name ?? 'User';
     $displayRole = ucfirst($user->role ?? 'Admin');
-    $initial = strtoupper(mb_substr($displayName, 0, 1));
+    $initial     = strtoupper(mb_substr($displayName, 0, 1));
 @endphp
 
 <!-- TOP NAVBAR -->
@@ -455,7 +542,10 @@
     <div class="nav-center">
         <div class="nav-search">
             <i class="bi bi-search"></i>
-            <input type="text" placeholder="Cari data ras hewan...">
+            <input type="text"
+                   id="searchInput"
+                   placeholder="Cari data ras hewan..."
+                   onkeyup="searchTable()">
         </div>
     </div>
 
@@ -542,6 +632,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -560,12 +662,13 @@
         <!-- KONTEN UTAMA -->
         <div class="container">
 
-            <a href="{{ route('dokter.ras.create') }}" class="btn-add">+ Tambah Ras Hewan</a>
+            <button onclick="openAddModal()" class="btn-add">+ Tambah Ras Hewan</button>
             <a href="{{ route('admin.datamaster') }}" class="btn-back">← Kembali</a>
 
-            <table>
+            <table id="rasTable">
                 <thead>
                     <tr>
+                        <th>No</th>
                         <th>ID</th>
                         <th>Nama Ras</th>
                         <th>Jenis Hewan</th>
@@ -574,31 +677,39 @@
                 </thead>
 
                 <tbody>
+                    @php $no = 1; @endphp
                     @forelse($listRas as $r)
-                    <tr>
-                        <td>{{ $r->idras_hewan }}</td>
-                        <td>{{ $r->nama_ras }}</td>
-                        <td>{{ $r->nama_jenis_hewan }}</td>
+                        <tr>
+                            <td>{{ $no++ }}</td>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $r->nama_ras }}</td>
+                            <td>{{ $r->nama_jenis_hewan }}</td>
+                            <td>
+                                <div class="action-icons">
+                                    <!-- EDIT PAKAI MODAL -->
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn"
+                                       title="Edit Ras Hewan"
+                                       onclick="openEditModal('{{ $r->idras_hewan }}','{{ $r->nama_ras }}','{{ $r->idjenis_hewan }}')">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
 
-                        <td>
-                            <div class="action-icons">
-                                <a class="icon-btn" href="{{ route('dokter.ras.edit', $r->idras_hewan) }}">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
-                                <a class="icon-btn delete"
-                                   href="{{ route('dokter.ras.delete', $r->idras_hewan) }}"
-                                   onclick="return confirm('Hapus data ini?')">
-                                    <i class="bi bi-trash"></i>
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
+                                    <!-- DELETE (MASIH PAKAI ROUTE GET) -->
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn delete"
+                                       title="Hapus Ras Hewan"
+                                       onclick="deleteRas('{{ $r->idras_hewan }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
                     @empty
-                    <tr>
-                        <td colspan="4" style="text-align:center; color:#555;">
-                            Belum ada data
-                        </td>
-                    </tr>
+                        <tr>
+                            <td colspan="5" style="text-align:center; color:#555;">
+                                Belum ada data
+                            </td>
+                        </tr>
                     @endforelse
                 </tbody>
             </table>
@@ -607,6 +718,157 @@
     </div><!-- /main-area -->
 
 </div><!-- /layout -->
+
+<!-- ==================== MODAL TAMBAH RAS HEWAN ==================== -->
+<div id="modalAdd" class="modal">
+    <div class="modal-box">
+        <h2>Tambah Ras Hewan</h2>
+
+        <form method="POST" action="{{ route('dokter.ras.store') }}" id="formAddRas">
+            @csrf
+
+            <label>Nama Ras Hewan *</label>
+            <input type="text"
+                   name="nama_ras"
+                   id="add_nama_ras"
+                   required
+                   placeholder="Contoh: Golden Retriever">
+
+            <label>Jenis Hewan *</label>
+            <select name="idjenis_hewan" id="add_idjenis_hewan" required>
+                <option value="">Pilih Jenis Hewan</option>
+                @foreach($listJenis as $j)
+                    <option value="{{ $j->idjenis_hewan }}">
+                        {{ $j->nama_jenis_hewan }}
+                    </option>
+                @endforeach
+            </select>
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeAddModal()" class="btn-cancel">
+                    Batal
+                </button>
+                <button type="submit" class="btn-submit">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== MODAL EDIT RAS HEWAN ==================== -->
+<div id="modalEdit" class="modal">
+    <div class="modal-box">
+        <h2>Edit Ras Hewan</h2>
+
+        <form method="POST" action="" id="formEditRas">
+            @csrf
+            <input type="hidden" name="edit_id" id="edit_id">
+
+            <label>Nama Ras Hewan *</label>
+            <input type="text" name="nama_ras" id="edit_nama_ras" required>
+
+            <label>Jenis Hewan *</label>
+            <select name="idjenis_hewan" id="edit_idjenis_hewan" required>
+                <option value="">Pilih Jenis Hewan</option>
+                @foreach($listJenis as $j)
+                    <option value="{{ $j->idjenis_hewan }}">
+                        {{ $j->nama_jenis_hewan }}
+                    </option>
+                @endforeach
+            </select>
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeEditModal()" class="btn-cancel">
+                    Batal
+                </button>
+                <button type="submit" class="btn-submit">
+                    Simpan
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ==================== FORM TERSEMBUNYI UNTUK DELETE ==================== -->
+<form id="deleteForm" method="GET" style="display:none;"></form>
+
+<script>
+    // ================= SEARCH TABLE =================
+    function searchTable() {
+        const input  = document.getElementById("searchInput");
+        const filter = input.value.toUpperCase();
+        const table  = document.getElementById("rasTable");
+        const tr     = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            const tdNama  = tr[i].getElementsByTagName("td")[2];
+            const tdJenis = tr[i].getElementsByTagName("td")[3];
+
+            if (tdNama || tdJenis) {
+                const txtNama  = (tdNama.textContent  || tdNama.innerText).toUpperCase();
+                const txtJenis = (tdJenis.textContent || tdJenis.innerText).toUpperCase();
+
+                if (txtNama.indexOf(filter) > -1 || txtJenis.indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    // ================= MODAL TAMBAH =================
+    function openAddModal() {
+        document.getElementById('add_nama_ras').value = '';
+        document.getElementById('add_idjenis_hewan').value = '';
+        document.getElementById('modalAdd').classList.add('show');
+    }
+
+    function closeAddModal() {
+        document.getElementById('modalAdd').classList.remove('show');
+        document.getElementById('formAddRas').reset();
+    }
+
+    // ================= MODAL EDIT =================
+    function openEditModal(idras, nama_ras, idjenis) {
+        document.getElementById('edit_id').value = idras;
+        document.getElementById('edit_nama_ras').value = nama_ras;
+        document.getElementById('edit_idjenis_hewan').value = idjenis;
+
+        const form = document.getElementById('formEditRas');
+        form.action = '/dokter/ras/update/' + idras;
+
+        document.getElementById('modalEdit').classList.add('show');
+    }
+
+    function closeEditModal() {
+        document.getElementById('modalEdit').classList.remove('show');
+        document.getElementById('formEditRas').reset();
+    }
+
+    // ================= DELETE RAS HEWAN =================
+    function deleteRas(idras) {
+        if (confirm('Apakah Anda yakin ingin menghapus ras hewan ini?')) {
+            const form = document.getElementById('deleteForm');
+            form.action = '/dokter/ras/delete/' + idras;
+            form.submit();
+        }
+    }
+
+    // ================= TUTUP MODAL KALAU KLIK DI LUAR BOX =================
+    window.onclick = function(event) {
+        const modalAdd  = document.getElementById('modalAdd');
+        const modalEdit = document.getElementById('modalEdit');
+
+        if (event.target === modalAdd) {
+            closeAddModal();
+        }
+        if (event.target === modalEdit) {
+            closeEditModal();
+        }
+    }
+</script>
 
 </body>
 </html>

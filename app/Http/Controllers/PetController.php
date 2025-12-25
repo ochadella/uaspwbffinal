@@ -4,12 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Pet;
 
 class PetController extends Controller
 {
-    // ===========================
-    //  TAMPILKAN DATA PET
-    // ===========================
     public function index()
     {
         $rows = DB::table('pet')
@@ -23,61 +21,62 @@ class PetController extends Controller
                 'ras_hewan.nama_ras'
             )
             ->get()
-            ->map(fn($item) => (array) $item)
+            ->map(fn($item) => (array)$item)
             ->toArray();
 
-        // Dropdown: Pemilik
         $listPemilik = DB::table('pemilik')
-            ->select('idpemilik', 'nama')
+            ->select('idpemilik', 'nama', 'no_wa', 'alamat')
             ->get()
-            ->map(fn($item) => (array) $item)
+            ->map(fn($item) => $item)
             ->toArray();
 
-        // Dropdown: Ras
         $listRas = DB::table('ras_hewan')
-            ->select('idras_hewan', 'nama_ras')
+            ->select('idras_hewan as idras', 'nama_ras')
             ->get()
-            ->map(fn($item) => (array) $item)
+            ->map(fn($item) => $item)
             ->toArray();
 
-        // Dropdown: Jenis
         $listJenis = DB::table('jenis_hewan')
-            ->select('idjenis_hewan', 'nama_jenis_hewan')
+            ->select('idjenis_hewan as idjenis', 'nama_jenis_hewan')
             ->get()
-            ->map(fn($item) => (array) $item)
+            ->map(fn($item) => $item)
             ->toArray();
+
+        $pemilik = $listPemilik;
+        $ras     = $listRas;
+        $jenis   = $listJenis;
 
         $editData = null;
 
         return view(
             'resepsionis.pet.datapet',
-            compact('rows', 'listPemilik', 'listRas', 'listJenis', 'editData')
+            compact('rows', 'listPemilik', 'listRas', 'listJenis', 'pemilik', 'ras', 'jenis', 'editData')
         );
     }
 
-    // ===========================
-    //  SIMPAN DATA
-    // ===========================
     public function store(Request $request)
     {
+        $nextId = (DB::table('pet')->max('idpet') ?? 0) + 1;
+
         DB::table('pet')->insert([
-            'nama' => $request->nama,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'warna_bulu' => $request->warna_bulu,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'idpemilik' => $request->idpemilik,
-            'idras_hewan' => $request->idras_hewan,
+            'idpet'          => $nextId,
+            'nama'           => $request->nama,
+            'tanggal_lahir'  => $request->tanggal_lahir,
+            'jenis_kelamin'  => $request->jenis_kelamin,
+            'idpemilik'      => $request->idpemilik,
+            'idras_hewan'    => $request->idras,
+
+            // ✅ FIX DI SINI — umur harus ambil dari input user
+            'umur'           => $request->umur,
         ]);
 
-        return redirect()->route('resepsionis.pet');
+        return redirect()->route('resepsionis.pet.regris')
+                         ->with('success', 'Data pet berhasil ditambahkan');
     }
 
-    // ===========================
-    //  EDIT DATA
-    // ===========================
     public function edit($id)
     {
-        $editData = (array) DB::table('pet')->where('idpet', $id)->first();
+        $editData = DB::table('pet')->where('idpet', $id)->first();
 
         $rows = DB::table('pet')
             ->join('pemilik', 'pemilik.idpemilik', '=', 'pet.idpemilik')
@@ -90,39 +89,127 @@ class PetController extends Controller
                 'ras_hewan.nama_ras'
             )
             ->get()
-            ->map(fn($item) => (array) $item)
+            ->map(fn($item) => (array)$item)
             ->toArray();
 
-        $listPemilik = DB::table('pemilik')->select('idpemilik', 'nama')->get()->map(fn($r) => (array)$r)->toArray();
-        $listRas = DB::table('ras_hewan')->select('idras_hewan', 'nama_ras')->get()->map(fn($r) => (array)$r)->toArray();
-        $listJenis = DB::table('jenis_hewan')->select('idjenis_hewan', 'nama_jenis_hewan')->get()->map(fn($r) => (array)$r)->toArray();
+        $listPemilik = DB::table('pemilik')
+            ->select('idpemilik', 'nama', 'no_wa', 'alamat')
+            ->get()
+            ->map(fn($item) => $item)
+            ->toArray();
 
-        return view('resepsionis.pet.datapet', compact('rows', 'editData', 'listPemilik', 'listRas', 'listJenis'));
+        $listRas = DB::table('ras_hewan')
+            ->select('idras_hewan as idras', 'nama_ras')
+            ->get()
+            ->map(fn($item) => $item)
+            ->toArray();
+
+        $listJenis = DB::table('jenis_hewan')
+            ->select('idjenis_hewan as idjenis', 'nama_jenis_hewan')
+            ->get()
+            ->map(fn($item) => $item)
+            ->toArray();
+
+        $pemilik = $listPemilik;
+        $ras     = $listRas;
+        $jenis   = $listJenis;
+
+        return view(
+            'resepsionis.pet.datapet',
+            compact('rows', 'editData', 'listPemilik', 'listRas', 'listJenis', 'pemilik', 'ras', 'jenis')
+        );
     }
 
-    // ===========================
-    //  UPDATE DATA
-    // ===========================
     public function update(Request $request, $id)
     {
         DB::table('pet')->where('idpet', $id)->update([
-            'nama' => $request->nama,
-            'tanggal_lahir' => $request->tanggal_lahir,
-            'warna_bulu' => $request->warna_bulu,
-            'jenis_kelamin' => $request->jenis_kelamin,
-            'idpemilik' => $request->idpemilik,
-            'idras_hewan' => $request->idras_hewan,
+            'nama'           => $request->nama,
+            'tanggal_lahir'  => $request->tanggal_lahir,
+            'jenis_kelamin'  => $request->jenis_kelamin,
+            'idpemilik'      => $request->idpemilik,
+            'idras_hewan'    => $request->idras,
+            'umur'           => $request->umur,
         ]);
 
-        return redirect()->route('resepsionis.pet');
+        return redirect()->route('resepsionis.pet.regris')
+                         ->with('success', 'Data pet berhasil diperbarui');
     }
 
-    // ===========================
-    //  HAPUS
-    // ===========================
     public function destroy($id)
     {
         DB::table('pet')->where('idpet', $id)->delete();
-        return redirect()->route('resepsionis.pet');
+
+        return redirect()->route('resepsionis.pet.regris')
+                         ->with('success', 'Data pet berhasil dihapus');
     }
+
+    public function getPet($id)
+    {
+        // ambil hewan + pemilik pakai model Pet
+        $pet = Pet::with('pemilik')->where('idpet', $id)->first();
+
+        if (!$pet) {
+            return response()->json(['error' => 'Data pet tidak ditemukan'], 404);
+        }
+
+        return response()->json([
+            'idpet'     => $pet->idpet,
+            'nama_pet'  => $pet->nama,
+            'idpemilik' => $pet->idpemilik,
+            'nama_pemilik' => $pet->pemilik->nama ?? null,
+        ]);
+    }
+
+
+    public function indexResepsionis()
+    {
+        $rows = DB::table('pet')
+            ->leftJoin('pemilik', 'pet.idpemilik', '=', 'pemilik.idpemilik')
+            ->leftJoin('ras_hewan', 'pet.idras_hewan', '=', 'ras_hewan.idras_hewan')
+            ->select(
+                'pet.*',
+                'pemilik.nama as nama_pemilik',
+                'pemilik.no_wa as wa_pemilik',
+                'pemilik.alamat as alamat_pemilik',
+                'ras_hewan.nama_ras',
+                'ras_hewan.idras_hewan as idras'
+            )
+            ->get();
+
+        $pemilik = DB::table('pemilik')->get();
+        $ras     = DB::table('ras_hewan')->select(
+                        'idras_hewan as idras',
+                        'nama_ras'
+                   )->get();
+
+        return view('resepsionis.pet.datapet', compact('rows', 'pemilik', 'ras'));
+    }
+
+    public function regrispet()
+    {
+        $pemilik = \DB::table('pemilik')->get();
+
+        $ras = \DB::table('ras_hewan')
+            ->select('idras_hewan as idras', 'nama_ras')
+            ->get();
+
+        $rows = \DB::table('pet')
+            ->leftJoin('pemilik', 'pet.idpemilik', '=', 'pemilik.idpemilik')
+            ->leftJoin('ras_hewan', 'pet.idras_hewan', '=', 'ras_hewan.idras_hewan')
+            ->select(
+                'pet.*',
+                'pemilik.nama as nama_pemilik',
+                'pemilik.no_wa as wa_pemilik',
+                'pemilik.alamat as alamat_pemilik',
+                'ras_hewan.nama_ras',
+                'ras_hewan.idras_hewan'
+            )
+            ->get()
+            ->map(function ($r) {
+                return (array) $r;
+            });
+
+        return view('resepsionis.pet.Regrispet', compact('pemilik', 'ras', 'rows'));
+    }
+
 }

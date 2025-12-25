@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use App\Models\User;
 
 class LoginController extends Controller
@@ -41,65 +42,53 @@ class LoginController extends Controller
             ])->withInput($request->only('email'));
         }
 
-        // CEK STATUS AKTIF
-        if (isset($user->status) && $user->status !== 'aktif') {
-            return back()->withErrors([
-                'email' => 'Akun tidak aktif. Hubungi administrator.',
-            ])->withInput($request->only('email'));
+        // CEK STATUS AKTIF (TOLERAN)
+        if (isset($user->status)) {
+            $statusClean = strtolower(trim($user->status));
+            
+            // HANYA TOLAK jika status JELAS nonaktif
+            if (in_array($statusClean, ['nonaktif', 'inactive', 'banned', 'suspended'])) {
+                return back()->withErrors([
+                    'email' => 'Akun tidak aktif. Hubungi administrator.',
+                ])->withInput($request->only('email'));
+            }
         }
 
         // LOGIN SUKSES
         Auth::login($user);
         $request->session()->regenerate();
 
-        // GET ROLE
-        $role = strtolower(trim($user->role));
-
-        // LOG UNTUK DEBUG
-        Log::info("User Login", [
-            'email' => $user->email,
-            'role_asli' => $user->role,
-            'role_processed' => $role,
-            'iduser' => $user->iduser
-        ]);
+        // GET ROLE DAN BERSIHKAN
+        $role = strtolower(trim($user->role ?? ''));
 
         // REDIRECT BERDASARKAN ROLE
-        try {
-            switch ($role) {
-                case 'administrator':
-                case 'admin':
-                    Log::info("Redirect ke dashboard admin");
-                    return redirect()->route('interface.dashboard');
-                    
-                case 'dokter':
-                    Log::info("Redirect ke dashboard dokter");
-                    return redirect()->route('dashboard_dokter');
-                    
-                case 'perawat':
-                    Log::info("Redirect ke dashboard perawat");
-                    return redirect()->route('interface.dashboard_perawat');
-                    
-                case 'resepsionis':
-                    Log::info("Redirect ke dashboard resepsionis");
-                    return redirect()->route('dashboard.resepsionis');
-                    
-                default:
-                    Log::error("Role tidak dikenali: " . $role);
-                    Auth::logout();
-                    return back()->withErrors([
-                        'email' => "Role tidak dikenali: [{$user->role}]. Hubungi admin.",
-                    ])->withInput($request->only('email'));
-            }
-        } 
-        catch (\Exception $e) {
-            Log::error("Error saat redirect", [
-                'error' => $e->getMessage(),
-                'role' => $role
-            ]);
-            Auth::logout();
-            return back()->withErrors([
-                'email' => 'Terjadi kesalahan sistem. Error: ' . $e->getMessage(),
-            ]);
+        switch ($role) {
+            case 'administrator':
+            case 'admin':
+                return redirect()->route('interface.dashboard');
+                
+            case 'dokter':
+                return redirect()->route('interface.dashboard_dokter');
+                
+            case 'perawat':
+                return redirect()->route('interface.dashboard_perawat');
+                
+            case 'resepsionis':
+            case 'resepsionist':
+                return redirect()->route('dashboard.resepsionis');
+
+            /* ============================
+               ⭐ PENAMBAHAN UNTUK PEMILIK ⭐
+               ============================ */
+            case 'pemilik':
+                return redirect()->route('dashboard.pemilik');
+            /* ============================ */
+
+            default:
+                Auth::logout();
+                return back()->withErrors([
+                    'email' => "Role tidak valid: [{$user->role}]. Hubungi administrator.",
+                ])->withInput($request->only('email'));
         }
     }
 

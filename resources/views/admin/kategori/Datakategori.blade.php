@@ -541,13 +541,15 @@
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -623,6 +625,18 @@
             </a>
         </div>
 
+        <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -658,7 +672,7 @@
                 <tbody>
                     @forelse ($rows as $r)
                         <tr>
-                            <td>{{ $r['idkategori'] }}</td>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $r['nama_kategori'] }}</td>
 
                             <td>
@@ -714,6 +728,47 @@
         </form>
     </div>
 </div>
+
+@if(isset($editData) && $editData)
+<div id="modalEdit" class="modal" style="display: flex;">
+    <div class="modal-box">
+
+        <h2>Edit Kategori</h2>
+
+        <form method="POST" action="{{ route('admin.kategori.update', $editData['idkategori']) }}">
+            @csrf
+
+            <label>Nama Kategori:</label>
+            <input type="text" name="nama_kategori" value="{{ $editData['nama_kategori'] }}" required>
+
+            <div class="modal-buttons">
+                <a href="{{ route('admin.kategori.data') }}" class="btn-cancel">Batal</a>
+
+                <button type="submit" class="btn-submit">
+                    Update
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+@endif
+
+@if(isset($editData) && $editData)
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const modal = document.getElementById('modalEdit');
+    if (modal) modal.style.display = 'flex';
+
+    window.onclick = function(e) {
+        if (e.target === modal) {
+            window.location.href = "{{ route('admin.kategori.data') }}";
+        }
+    };
+});
+</script>
+@endif
+
 
 </body>
 </html>

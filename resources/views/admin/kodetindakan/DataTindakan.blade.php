@@ -543,13 +543,15 @@
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -614,7 +616,7 @@
             <a href="{{ route('resepsionis.pet') }}" class="sidebar-link">
                 <i class="bi bi-bag-heart"></i> <span>Data Pet</span>
             </a>
-            <a href{{ route('admin.kategori.data') }} class="sidebar-link">
+            <a href="{{ route('admin.kategori.data') }}" class="sidebar-link">
                 <i class="bi bi-tag"></i> <span>Kategori</span>
             </a>
             <a href="{{ route('admin.kategoriklinis.data') }}" class="sidebar-link">
@@ -624,6 +626,18 @@
                 <i class="bi bi-code-square"></i> <span>Kode Tindakan</span>
             </a>
         </div>
+
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
 
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
@@ -675,8 +689,17 @@
 
                             <td>
                                 <div class="action-icons">
-                                    <form method="GET" action="{{ url('/admin/kodetindakan/delete/' . $row->id_tindakan) }}" 
-                                          onsubmit="return confirm('Yakin hapus data tindakan ini?')" style="margin:0;">
+                                    {{-- Tombol EDIT: buka halaman dengan ?edit=id_tindakan --}}
+                                    <a href="{{ route('admin.kodetindakan.data', ['edit' => $row->id]) }}"
+                                       class="icon-btn">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+
+                                    {{-- Tombol DELETE: pakai id_tindakan --}}
+                                    <form method="GET"
+                                          action="{{ url('/admin/kodetindakan/delete/' . $row->id) }}"
+                                          onsubmit="return confirm('Yakin hapus data tindakan ini?')"
+                                          style="margin:0;">
                                         <button type="submit" class="icon-btn delete">
                                             <i class="bi bi-trash"></i>
                                         </button>
@@ -697,7 +720,7 @@
 
 </div><!-- /layout -->
 
-<!-- ==================== MODAL ==================== -->
+<!-- ==================== MODAL TAMBAH ==================== -->
 <div id="modalTambah" class="modal">
     <div class="modal-box">
 
@@ -730,6 +753,51 @@
     </div>
 </div>
 
+{{-- ==================== MODAL EDIT (JIKA ADA $editData) ==================== --}}
+@if (!empty($editData))
+<div id="modalEdit" class="modal" style="display:flex;">
+    <div class="modal-box">
+
+        <h2>Edit Kode Tindakan</h2>
+
+        <form method="POST"
+              action="{{ route('admin.kodetindakan.update', $editData->id) }}">
+            @csrf
+
+            <label>Kode Tindakan:</label>
+            <input type="text" name="kode_tindakan"
+                   value="{{ $editData->kode_tindakan ?? '' }}" required>
+
+            <label>Nama Tindakan:</label>
+            <input type="text" name="nama_tindakan"
+                   value="{{ $editData->nama_tindakan ?? '' }}" required>
+
+            <label>Harga (Rp):</label>
+            <input type="number" name="harga"
+                   value="{{ $editData->harga ?? 0 }}" required>
+
+            <div class="modal-buttons">
+                <a href="{{ route('admin.kodetindakan.data') }}" class="btn-cancel">
+                    Batal
+                </a>
+                <button type="submit" class="btn-submit">
+                    Update
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+
+<script>
+    // Kalau mau pakai JS buka modal edit (opsional, tapi aman)
+    @if (!empty($editData))
+        const modalEdit = document.getElementById('modalEdit');
+        if (modalEdit) {
+            modalEdit.style.display = 'flex';
+        }
+    @endif
+</script>
+
 </body>
 </html>
- 

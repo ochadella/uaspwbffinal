@@ -27,4 +27,9 @@ class User extends Authenticatable
     protected $hidden = [
         'password'
     ];
+
+    // 🔥 OCHA TAMBAHKAN INI — WAJIB UNTUK LOGIN BERHASIL
+    protected $casts = [
+        'password' => 'hashed',
+    ];
 }

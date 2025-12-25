@@ -165,7 +165,7 @@
             gap: 22px;
         }
 
-        /* ---------- SIDEBAR (SAMA PERSIS SEPERTI DATA MASTER) ---------- */
+        /* ---------- SIDEBAR ---------- */
         .sidebar {
             width: 215px;
             border-radius: 24px;
@@ -265,7 +265,7 @@
         }
 
         .sidebar-header {
-            border-radius: 14px; /* smooth */
+            border-radius: 14px;
             transition: 0.25s ease;
         }
 
@@ -437,7 +437,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.55);
+            background: transparent;
             justify-content: center;
             align-items: center;
             z-index: 2000;
@@ -562,18 +562,20 @@
     <div class="nav-center">
         <div class="nav-search">
             <i class="bi bi-search"></i>
-            <input type="text" placeholder="Cari menu atau data dokter...">
+            <input type="text" placeholder="Cari username resepsionis...">
         </div>
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -583,18 +585,18 @@
 <div class="layout">
 
     <!-- SIDEBAR -->
-        <aside class="sidebar">
-            <a href="{{ route('admin.datamaster') }}" style="text-decoration: none; color: inherit;">
-                <div class="sidebar-header">
-                    <div class="sidebar-header-icon">
-                        <i class="bi bi-grid-1x2-fill"></i>
-                    </div>
-                    <div>
-                        <div class="sidebar-header-title">Data Master</div>
-                        <div class="sidebar-header-sub">Menu administrasi sistem</div>
-                    </div>
+    <aside class="sidebar">
+        <a href="{{ route('admin.datamaster') }}" style="text-decoration: none; color: inherit;">
+            <div class="sidebar-header">
+                <div class="sidebar-header-icon">
+                    <i class="bi bi-grid-1x2-fill"></i>
                 </div>
-            </a>
+                <div>
+                    <div class="sidebar-header-title">Data Master</div>
+                    <div class="sidebar-header-sub">Menu administrasi sistem</div>
+                </div>
+            </div>
+        </a>
 
         <hr class="sidebar-divider">
 
@@ -649,6 +651,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -667,13 +681,15 @@
         <!-- KONTEN UTAMA -->
         <div class="container">
 
-            <a href="{{ route('admin.resepsionis.create') }}" class="btn-add">+ Tambah Resepsionis</a>
+            <!-- tombol buka modal tambah -->
+            <button class="btn-add" onclick="openAddModal()">+ Tambah Resepsionis</button>
             <a href="{{ route('admin.datamaster') }}" class="btn-back">← Kembali</a>
 
-            <table>
+            <table id="resepsionisTable">
                 <thead>
                     <tr>
                         <th>No</th>
+                        <th>ID</th>
                         <th>Nama</th>
                         <th>Email</th>
                         <th>Status</th>
@@ -686,38 +702,41 @@
                     @foreach($resepsionis as $r)
                         <tr>
                             <td>{{ $no++ }}</td>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $r->nama }}</td>
                             <td>{{ $r->email }}</td>
 
-                            <!-- STATUS BADGE -->
                             <td>
                                 @if($r->status === 'aktif')
-                                    <span class="status-badge active-badge">Active</span>
+                                    <span class="status-badge active-badge">Aktif</span>
                                 @else
-                                    <span class="status-badge inactive-badge">Inactive</span>
+                                    <span class="status-badge inactive-badge">Nonaktif</span>
                                 @endif
                             </td>
 
-                            <!-- ACTION ICONS -->
                             <td>
                                 <div class="action-icons">
-                                    <!-- EDIT -->
-                                    <a class="icon-btn"
-                                       href="{{ route('admin.resepsionis.edit', ['id' => $r->iduser]) }}">
+                                    <!-- EDIT via MODAL -->
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn"
+                                       title="Edit Resepsionis"
+                                       onclick="openEditModal('{{ $r->iduser }}','{{ $r->nama }}','{{ $r->email }}','{{ $r->status }}')">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
 
-                                    <!-- RESET PASSWORD -->
+                                    <!-- RESET PASSWORD (tetap ke route reset) -->
                                     <a class="icon-btn"
                                        href="{{ route('admin.resepsionis.reset', ['id' => $r->iduser]) }}"
-                                       onclick="return confirm('Reset password resepsionis ini?')">
+                                       onclick="return confirm('Reset password resepsionis ini?')"
+                                       title="Reset Password">
                                         <i class="bi bi-key-fill"></i>
                                     </a>
 
-                                    <!-- DELETE -->
+                                    <!-- DELETE (tetap GET route seperti punyamu) -->
                                     <a class="icon-btn"
                                        href="{{ route('admin.resepsionis.delete', ['id' => $r->iduser]) }}"
-                                       onclick="return confirm('Hapus resepsionis ini?')">
+                                       onclick="return confirm('Hapus resepsionis ini?')"
+                                       title="Hapus Resepsionis">
                                         <i class="bi bi-trash"></i>
                                     </a>
                                 </div>
@@ -725,13 +744,190 @@
                         </tr>
                     @endforeach
                 </tbody>
-
             </table>
+
+            <!-- ==================== MODAL TAMBAH RESEPSIONIS ==================== -->
+            <div id="modalAdd" class="modal">
+                <div class="modal-box">
+                    <h2>Tambah Resepsionis Baru</h2>
+
+                    <form action="{{ route('admin.resepsionis.store') }}" method="POST" id="formAddResepsionis">
+                        @csrf
+
+                        <label>Nama *</label>
+                        <input type="text" name="nama" id="add_nama" required placeholder="Masukkan nama lengkap">
+
+                        <label>Email *</label>
+                        <input type="email" name="email" id="add_email" required placeholder="email@contoh.com">
+
+                        <label>Password *</label>
+                        <input type="password" name="password" id="add_password" required placeholder="Minimal 3 karakter">
+
+                        <label>Konfirmasi Password *</label>
+                        <input type="password" name="password_confirmation" id="add_password_confirmation" required>
+
+                        <label>Status *</label>
+                        <select name="status" id="add_status" required>
+                            <option value="">Pilih Status</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="nonaktif">Nonaktif</option>
+                        </select>
+
+                        <!-- ROLE auto resepsionis (controller tetap pakai fixed 'Resepsionis') -->
+                        <input type="hidden" name="role" value="resepsionis">
+
+                        <div class="modal-buttons">
+                            <button type="button" class="btn-cancel" onclick="closeAddModal()">Kembali</button>
+                            <button type="submit" class="btn-submit">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ==================== MODAL EDIT RESEPSIONIS ==================== -->
+            <div id="modalEdit" class="modal">
+                <div class="modal-box">
+                    <h2>Edit Data Resepsionis</h2>
+
+                    <form method="POST" action="" id="formEditResepsionis">
+                        @csrf
+                        <input type="hidden" name="edit_id" id="edit_id">
+
+                        <label>Nama:</label>
+                        <input type="text" name="nama" id="edit_nama" required>
+
+                        <label>Email:</label>
+                        <input type="email" name="email" id="edit_email" required>
+
+                        <label>Status:</label>
+                        <select name="status" id="edit_status" required>
+                            <option value="">Pilih Status</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="nonaktif">Nonaktif</option>
+                        </select>
+
+                        <div class="modal-buttons">
+                            <button type="button" onclick="closeEditModal()" class="btn-cancel">
+                                Batal
+                            </button>
+                            <button type="submit" class="btn-submit">
+                                Simpan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
         </div><!-- /container -->
     </div><!-- /main-area -->
 
 </div><!-- /layout -->
+
+<script>
+    // ================= MODAL ADD =================
+    function openAddModal() {
+        document.getElementById('add_nama').value = '';
+        document.getElementById('add_email').value = '';
+        document.getElementById('add_password').value = '';
+        document.getElementById('add_password_confirmation').value = '';
+        document.getElementById('add_status').value = '';
+        document.getElementById('modalAdd').classList.add('show');
+    }
+
+    function closeAddModal() {
+        document.getElementById('modalAdd').classList.remove('show');
+        document.getElementById('formAddResepsionis').reset();
+    }
+
+    // ================= MODAL EDIT =================
+    function openEditModal(iduser, nama, email, status) {
+        document.getElementById('edit_id').value = iduser;
+        document.getElementById('edit_nama').value = nama;
+        document.getElementById('edit_email').value = email;
+        document.getElementById('edit_status').value = status;
+
+        const form = document.getElementById('formEditResepsionis');
+        form.action = '/admin/datamaster/resepsionis/update/' + iduser;
+
+        document.getElementById('modalEdit').classList.add('show');
+    }
+
+    function closeEditModal() {
+        document.getElementById('modalEdit').classList.remove('show');
+        document.getElementById('formEditResepsionis').reset();
+    }
+
+    // ================= TUTUP MODAL KALAU KLIK DI LUAR =================
+    window.onclick = function(event) {
+        const modalAdd  = document.getElementById('modalAdd');
+        const modalEdit = document.getElementById('modalEdit');
+
+        if (event.target === modalAdd) {
+            closeAddModal();
+        }
+        if (event.target === modalEdit) {
+            closeEditModal();
+        }
+    }
+
+    // ================= AJAX SUBMIT ADD =================
+    document.querySelector('#formAddResepsionis').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Resepsionis berhasil ditambahkan!');
+                closeAddModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Gagal menambahkan resepsionis');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat menambahkan resepsionis');
+        });
+    });
+
+    // ================= AJAX SUBMIT EDIT =================
+    document.querySelector('#formEditResepsionis').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Resepsionis berhasil diupdate!');
+                closeEditModal();
+                window.location.reload();
+            } else {
+                alert(data.message || 'Gagal mengupdate resepsionis');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Terjadi kesalahan saat mengupdate resepsionis');
+        });
+    });
+</script>
 
 </body>
 </html>

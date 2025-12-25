@@ -1,169 +1,369 @@
-<?php
-require_once(__DIR__ . '/../../../config/koneksiDB.php');
-require_once(__DIR__ . '/../../../classes/RekamMedis.php');
-
-$db = new DBConnection();
-$conn = $db->getConnection();
-$rekam = new RekamMedis($conn);
-
-// Ambil ID dari URL
-$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
-$idreservasi = isset($_GET['idreservasi']) ? intval($_GET['idreservasi']) : 0;
-$data = null;
-
-// Jika yang dikirim idreservasi, cari idrekam_medis-nya dulu
-if ($idreservasi > 0 && $id === 0) {
-    $stmt = $conn->prepare("SELECT idrekam_medis FROM rekam_medis WHERE idreservasi_dokter = ?");
-    $stmt->bind_param("i", $idreservasi);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    if ($row = $res->fetch_assoc()) {
-        $id = $row['idrekam_medis'];
-    }
-    $stmt->close();
-}
-
-if ($id > 0) {
-    // Query join antara rekam_medis dan temu_dokter
-    $query = "
-        SELECT r.*, t.waktu_daftar AS tanggal_reservasi
-        FROM rekam_medis r
-        LEFT JOIN temu_dokter t ON r.idreservasi_dokter = t.idreservasi_dokter
-        WHERE r.idrekam_medis = ?
-    ";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("i", $id);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $data = $result->fetch_assoc();
-}
-?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Detail Rekam Medis | RSHP</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(to right, #142a46, #102f76, #f9a01b);
-      color: #142a46;
-      margin: 0;
-      padding: 0;
-    }
-    .navbar {
-      background-color: #fff;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      padding: 15px 30px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .navbar span {
-      font-weight: bold;
-      color: #102f76;
-      font-size: 18px;
-    }
-    .navbar a {
-      text-decoration: none;
-      color: #102f76;
-      font-weight: 600;
-      margin-left: 20px;
-      transition: 0.3s;
-    }
-    .navbar a:hover {
-      color: #f9a01b;
-    }
-    .container {
-      background: #fff;
-      border-radius: 16px;
-      padding: 30px 40px;
-      margin-top: 50px;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-      max-width: 900px;
-    }
-    h2 {
-      color: #f9a01b;
-      font-weight: 700;
-      text-align: center;
-      margin-bottom: 30px;
-    }
-    .detail-box {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px 25px;
-      margin-bottom: 15px;
-      border-left: 6px solid #102f76;
-    }
-    .detail-box strong {
-      color: #102f76;
-    }
-    .btn-back {
-      background: linear-gradient(to right, #f9a01b, #ff9554);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 20px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.3s ease;
-      display: inline-block;
-      margin-bottom: 20px;
-    }
-    .btn-back:hover {
-      opacity: 0.9;
-      transform: translateY(-3px);
-    }
-    .footer-note {
-      text-align: center;
-      margin-top: 25px;
-      font-size: 0.9rem;
-      color: #142a46;
-      opacity: 0.8;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Detail Rekam Medis | Dokter</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(180deg,#ffffff 0%,#fff7ef 20%,#ffe6bf 50%,#ffcf86 80%,#ffb74a 100%);
+            background-attachment: fixed;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(255,200,80,0.25), transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(255,160,40,0.2), transparent 60%);
+            z-index: -1;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: linear-gradient(135deg,#102f76 0%,#142a46 100%);
+            color: white;
+            padding: 15px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.25);
+        }
+
+        .nav-left { display:flex; align-items:center; gap:12px; }
+        .nav-logo {
+            font-size: 30px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .nav-right { display:flex; align-items:center; gap:16px; }
+        .user-avatar {
+            width:34px; height:34px; border-radius:50%;
+            background:#f9a01b; color:#102f76;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:bold;
+        }
+
+        /* CONTENT WRAPPER */
+        .container {
+            max-width: 1200px;
+            margin: 40px auto 100px;
+            padding: 20px;
+            animation: fadeIn .4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .title-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .title-header h1 {
+            font-size: 36px;
+            color: #102f76;
+            font-weight: 800;
+        }
+        .title-icon {
+            font-size: 70px;
+            color: #102f76;
+            background: #f9a01b33;
+            padding: 22px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* CARD */
+        .card {
+            background: #ffffffd9;
+            backdrop-filter: blur(10px);
+            padding: 28px 28px;
+            border-radius: 22px;
+            margin-bottom: 30px;
+
+            box-shadow:
+                inset 0 2px 5px rgba(255,255,255,0.7),
+                inset 0 -3px 6px rgba(0,0,0,0.06),
+                0 6px 22px rgba(0,0,0,0.14);
+
+            border: 1px solid #f2d9a5;
+
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 8px;
+            height: 100%;
+            background: #f9a01b;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .card h2 {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #102f76;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h2 i {
+            font-size: 22px;
+            color: #f9a01b;
+            background: #fff3d4;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 30px;
+        }
+
+        .info-grid div {
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e6c98f;
+        }
+
+        .label {
+            font-size: 13px;
+            color: #102f76;
+            opacity: .82;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2a2a2a;
+            background: #fff5df;
+            padding: 6px 12px;
+            border-radius: 10px;
+            margin-top: 4px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        .paw-icon {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            font-size: 28px;
+            color: #f9a01b;
+            opacity: .22;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items:center;
+            gap:8px;
+            background:#102f76;
+            color:white;
+            padding:12px 22px;
+            text-decoration:none;
+            border-radius:14px;
+            font-weight:600;
+            box-shadow:0 5px 18px rgba(0,0,0,0.25);
+        }
+        .btn-back:hover { transform: translateY(-2px); }
+    </style>
 </head>
 <body>
 
-  <nav class="navbar">
-    <span>📋 Detail Rekam Medis Hewan RSHP</span>
-    <span>
-      <a href="../../../interface/dashboard_dokter.php"><i class="bi bi-house-door"></i> Dashboard</a>
-      <a href="../../../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Logout</a>
-    </span>
-  </nav>
-
-  <div class="container">
-    <h2>🩺 Detail Rekam Medis</h2>
-
-    <div class="mb-3 text-center">
-      <a href="../pasien/DataPasien.php" class="btn-back">
-        <i class="bi bi-arrow-left-circle"></i> Kembali 
-      </a>
+<!-- NAVBAR -->
+<div class="navbar">
+    <div class="nav-left">
+        <i class="bi bi-hospital nav-logo"></i>
+        <div>
+            <div style="font-weight:700;">Klinik Hewan</div>
+            <div style="font-size:12px; opacity:.8;">Panel Dokter</div>
+        </div>
     </div>
 
-    <?php if ($data): ?>
-      <div class="detail-box"><strong>ID Rekam Medis:</strong> <?= htmlspecialchars($data['idrekam_medis'] ?? '-') ?></div>
-      <div class="detail-box"><strong>ID Reservasi:</strong> <?= htmlspecialchars($data['idreservasi_dokter'] ?? '-') ?></div>
-      <div class="detail-box"><strong>Keluhan:</strong> <?= htmlspecialchars($data['anamnesa'] ?? '-') ?></div>
-      <div class="detail-box"><strong>Diagnosa:</strong> <?= htmlspecialchars($data['diagnosa'] ?? '-') ?></div>
-      <div class="detail-box"><strong>Tindakan:</strong> <?= htmlspecialchars($data['temuan_klinis'] ?? '-') ?></div>
-      <div class="detail-box"><strong>Catatan Dokter:</strong> <?= htmlspecialchars($data['dokter_pemeriksa'] ?? '-') ?></div>
-      <div class="detail-box">
-        <strong>Tanggal Pemeriksaan:</strong>
-        <?= !empty($data['tanggal_reservasi'])
-          ? htmlspecialchars(date('d-m-Y', strtotime($data['tanggal_reservasi'])))
-          : '-' ?>
-      </div>
-      <div class="detail-box"><strong>Dibuat Oleh:</strong> <?= htmlspecialchars($data['dibuat_oleh'] ?? 'Perawat RSHP') ?></div>
-    <?php else: ?>
-      <p class="text-center text-muted">Data rekam medis tidak ditemukan.</p>
-    <?php endif; ?>
+    <div class="nav-right">
+        <div class="user-avatar">{{ strtoupper(substr(auth()->user()->nama,0,1)) }}</div>
+        <div style="text-align:right;">
+            <div style="font-size:13px; font-weight:600;">{{ auth()->user()->nama }}</div>
+            <div style="font-size:11px; opacity:.8;">Dokter</div>
+        </div>
+    </div>
+</div>
 
-    <div class="footer-note">RS Hewan Peliharaan — Melayani dengan Sepenuh Hati 💙</div>
-  </div>
+
+<div class="container">
+
+    <div class="title-header">
+        <i class="bi bi-file-medical title-icon"></i>
+        <h1>Detail Rekam Medis</h1>
+    </div>
+
+    <!-- =============== DATA DASAR =============== -->
+    <div class="card">
+        <i class="bi bi-paw-fill paw-icon"></i>
+        <h2><i class="bi bi-paw"></i> Informasi Hewan</h2>
+
+        <div class="info-grid">
+
+            <div>
+                <div class="label">ID Reservasi</div>
+                <div class="value">{{ $rekamMedis->idreservasi }}</div>
+            </div>
+
+            <div>
+                <div class="label">Nama Hewan</div>
+                <div class="value">{{ $rekamMedis->nama_hewan ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Jenis Hewan</div>
+                <div class="value">{{ $rekamMedis->nama_jenis_hewan ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Ras</div>
+                <div class="value">{{ $rekamMedis->nama_ras ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Jenis Kelamin</div>
+                <div class="value">{{ $rekamMedis->jenis_kelamin ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Usia</div>
+                <div class="value">{{ $rekamMedis->usia ?? '-' }} bulan</div>
+            </div>
+
+            <div>
+                <div class="label">Pemilik</div>
+                <div class="value">{{ $rekamMedis->nama_pemilik ?? '-' }}</div>
+            </div>
+
+            <!-- 🔥 TAMBAHAN BARU (TIDAK ADA YANG DIHAPUS) -->
+            <div>
+                <div class="label">No WA Pemilik</div>
+                <div class="value">{{ $rekamMedis->no_wa ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Alamat Pemilik</div>
+                <div class="value">{{ $rekamMedis->alamat_pemilik ?? '-' }}</div>
+            </div>
+            <!-- 🔥 END TAMBAHAN -->
+
+            <div>
+                <div class="label">Tanggal Kunjungan</div>
+                <div class="value">{{ $rekamMedis->tanggal_temu ?? '-' }}</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- =============== KELUHAN =============== -->
+    <div class="card">
+        <i class="bi bi-chat-left-heart paw-icon"></i>
+        <h2><i class="bi bi-chat-left-heart"></i> Keluhan (Resepsionis)</h2>
+        <div class="value">{{ $rekamMedis->keluhan ?? '-' }}</div>
+    </div>
+
+    <!-- =============== DATA PERAWAT =============== -->
+    <div class="card">
+        <i class="bi bi-heart-pulse paw-icon"></i>
+        <h2><i class="bi bi-heart-pulse"></i> Data Awal Perawat</h2>
+
+        <div class="info-grid">
+            <div>
+                <div class="label">Anamnesa Awal</div>
+                <div class="value">{{ $rekamMedis->anamnesa_awal ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Suhu Tubuh</div>
+                <div class="value">{{ $rekamMedis->suhu ?? '-' }} °C</div>
+            </div>
+
+            <div>
+                <div class="label">Nadi</div>
+                <div class="value">{{ $rekamMedis->nadi ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Berat Badan</div>
+                <div class="value">{{ $rekamMedis->berat_badan ?? '-' }} kg</div>
+            </div>
+
+            <div>
+                <div class="label">Perilaku Hewan</div>
+                <div class="value">{{ $rekamMedis->perilaku_hewan ?? '-' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============== DATA DOKTER =============== -->
+    <div class="card">
+        <i class="bi bi-stethoscope paw-icon"></i>
+        <h2><i class="bi bi-stethoscope"></i> Pemeriksaan Dokter</h2>
+
+        <div class="info-grid">
+            <div>
+                <div class="label">Anamnesa Dokter</div>
+                <div class="value">{{ $rekamMedis->anamnesa ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Diagnosa</div>
+                <div class="value">{{ $rekamMedis->diagnosa ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Tindakan Medis</div>
+                <div class="value">{{ $rekamMedis->temuan_klinis ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Resep / Terapi</div>
+                <div class="value">{{ $rekamMedis->resep ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Kategori Klinis</div>
+                <div class="value">{{ $rekamMedis->nama_kategori_klinis ?? '-' }}</div>
+            </div>
+
+            <div>
+                <div class="label">Kategori Tindakan</div>
+                <div class="value">{{ $rekamMedis->nama_tindakan ?? '-' }}</div>
+            </div>
+        </div>
+    </div>
+
+    <br>
+    <a href="{{ route('dokter.rekammedis.index') }}" class="btn-back">
+        <i class="bi bi-arrow-left"></i> Kembali ke Data Rekam Medis
+    </a>
+
+</div>
 
 </body>
 </html>

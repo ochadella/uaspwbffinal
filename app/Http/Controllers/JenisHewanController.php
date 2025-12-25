@@ -18,9 +18,19 @@ class JenisHewanController extends Controller
 
     public function store(Request $request)
     {
-        DB::table('jenis_hewan')->insert([
-            'nama_jenis_hewan' => $request->nama
+        // VALIDASI WAJIB
+        $request->validate([
+            'nama_jenis_hewan' => 'required'
         ]);
+
+        // GENERATE ID MANUAL — AMBIL ID TERBESAR TERUS +1
+        $lastId = DB::table('jenis_hewan')->max('idjenis_hewan') ?? 0;
+
+        DB::table('jenis_hewan')->insert([
+            'idjenis_hewan'     => $lastId + 1,
+            'nama_jenis_hewan'  => $request->nama_jenis_hewan
+        ]);
+
         return redirect('/dokter/jenis/datajenishewan')->with('success', 'Data berhasil ditambahkan!');
     }
 
@@ -33,9 +43,14 @@ class JenisHewanController extends Controller
 
     public function update(Request $request, $id)
     {
-        DB::table('jenis_hewan')->where('idjenis_hewan', $id)->update([
-            'nama_jenis_hewan' => $request->nama
+        $request->validate([
+            'nama_jenis_hewan' => 'required'
         ]);
+
+        DB::table('jenis_hewan')->where('idjenis_hewan', $id)->update([
+            'nama_jenis_hewan' => $request->nama_jenis_hewan
+        ]);
+
         return redirect('/dokter/jenis/datajenishewan')->with('success', 'Data berhasil diperbarui!');
     }
 

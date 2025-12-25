@@ -38,6 +38,10 @@ class RoleController extends Controller
         // Generate ID manual agar rapi dan tidak bolong
         $nextId = (Role::max('idrole') ?? 0) + 1;
 
+        $nextId = Role::max("idrole") + 1;
+        $nextId = Role::max("idrole") + 1;
+        $nextId = Role::max("idrole") + 1;
+        $nextId = Role::max("idrole") + 1;
         Role::create([
             'idrole'    => $nextId,
             'nama_role' => $request->nama_role,

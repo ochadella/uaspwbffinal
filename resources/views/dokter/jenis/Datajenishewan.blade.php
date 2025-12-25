@@ -159,7 +159,6 @@
             filter: brightness(1.05);
         }
 
-        /* ================= LAYOUT: SIDEBAR + MAIN ================= */
         .layout {
             max-width: 1420px;
             margin: 24px auto 40px;
@@ -167,7 +166,6 @@
             gap: 22px;
         }
 
-        /* ---------- SIDEBAR (SAMA PERSIS) ---------- */
         .sidebar {
             width: 215px;
             border-radius: 24px;
@@ -274,12 +272,10 @@
             padding-top: 8px;
         }
 
-        /* ---------- MAIN AREA ---------- */
         .main-area {
             flex: 1;
         }
 
-        /* ================= CENTERED PAGE HEADER ================= */
         .page-header {
             text-align: center;
             margin-bottom: 20px;
@@ -306,7 +302,6 @@
             color: #3c3c3c;
         }
 
-        /* ================= CONTAINER CARD ================= */
         .container {
             margin: 0 auto;
             max-width: 100%;
@@ -323,7 +318,6 @@
             to   { opacity: 1; transform: translateY(0); }
         }
 
-        /* ================= BUTTONS ================= */
         .btn-add {
             padding: 12px 20px;
             background: linear-gradient(90deg, #f9a01b, #ffba4c);
@@ -357,7 +351,6 @@
             background: #5a6268;
         }
 
-        /* ================= TABLE ================= */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -387,7 +380,6 @@
             background: rgba(249,160,27,0.13);
         }
 
-        /* ================= ACTION ICONS ================= */
         .action-icons {
             display: flex;
             justify-content: center;
@@ -412,23 +404,90 @@
             color: #ff4d4d;
         }
 
-        /* ================= RESPONSIVE ================= */
-        @media (max-width: 1100px) {
-            .layout {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                flex-direction: row;
-                overflow-x: auto;
-            }
-            .sidebar-menu {
-                flex-direction: row;
-                flex-wrap: nowrap;
-            }
-            .sidebar-section-title {
-                display: none;
-            }
+        /* ================= MODAL ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-box {
+            width: 420px;
+            background: white;
+            padding: 26px;
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-box h2 {
+            text-align: center;
+            color: #102f76;
+            margin-top: 0;
+        }
+
+        .modal-box label {
+            font-weight: 600;
+            color: #102f76;
+            display: block;
+            margin-top: 12px;
+        }
+
+        .modal-box input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            margin-top: 6px;
+            font-size: 14px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            padding: 10px 16px;
+            background: #6c757d;
+            border: none;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+        }
+
+        .btn-submit {
+            padding: 10px 16px;
+            background: #f9a01b;
+            border: none;
+            color: #102f76;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-submit:hover {
+            background: #ffba4c;
         }
     </style>
 </head>
@@ -455,18 +514,20 @@
     <div class="nav-center">
         <div class="nav-search">
             <i class="bi bi-search"></i>
-            <input type="text" placeholder="Cari menu atau data jenis hewan...">
+            <input type="text" placeholder="Cari data jenis hewan...">
         </div>
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -474,6 +535,7 @@
 </div>
 
 <div class="layout">
+
 
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -542,6 +604,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -550,64 +624,167 @@
     <!-- MAIN AREA -->
     <div class="main-area">
 
-        <!-- HEADER TENGAH -->
         <div class="page-header">
             <i class="bi bi-grid-3x3-gap-fill page-header-icon"></i>
             <h1>Data Jenis Hewan</h1>
             <p>Daftar jenis hewan yang terdaftar dalam sistem.</p>
         </div>
 
-        <!-- KONTEN UTAMA -->
         <div class="container">
 
-            <a href="{{ route('dokter.jenis.create') }}" class="btn-add">+ Tambah Jenis Hewan</a>
+            <button onclick="openAddModal()" class="btn-add">+ Tambah Jenis Hewan</button>
             <a href="{{ route('admin.datamaster') }}" class="btn-back">← Kembali</a>
 
-            <table>
+            <table id="jenisTable">
                 <thead>
                     <tr>
+                        <th>No</th>
                         <th>ID</th>
-                        <th>Nama Jenis</th>
+                        <th>Nama Jenis Hewan</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @forelse ($rows as $r)
+                    @php $no = 1; @endphp
+                    @foreach($rows as $r)
                         <tr>
-                            <td>{{ $r->idjenis_hewan }}</td>
+                            <td>{{ $no++ }}</td>
+                            <td>{{ $loop->iteration }}</td>
                             <td>{{ $r->nama_jenis_hewan }}</td>
                             <td>
                                 <div class="action-icons">
+
                                     <!-- EDIT -->
-                                    <a class="icon-btn"
-                                       href="{{ route('dokter.jenis.edit', $r->idjenis_hewan) }}"
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn"
+                                       onclick="openEditModal('{{ $r->idjenis_hewan }}','{{ $r->nama_jenis_hewan }}')"
                                        title="Edit Jenis Hewan">
                                         <i class="bi bi-pencil-square"></i>
                                     </a>
 
                                     <!-- DELETE -->
-                                    <a class="icon-btn"
-                                       href="{{ route('dokter.jenis.delete', $r->idjenis_hewan) }}"
-                                       onclick="return confirm('Hapus jenis hewan ini?')"
+                                    <a href="javascript:void(0)"
+                                       class="icon-btn delete"
+                                       onclick="deleteJenis('{{ $r->idjenis_hewan }}')"
                                        title="Hapus Jenis Hewan">
                                         <i class="bi bi-trash"></i>
                                     </a>
+
                                 </div>
                             </td>
                         </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" style="text-align:center; color:#555;">Belum ada data</td>
-                        </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
 
-        </div><!-- /container -->
-    </div><!-- /main-area -->
+        </div>
+    </div>
 
-</div><!-- /layout -->
+</div>
+
+<!-- ==================== MODAL TAMBAH ==================== -->
+<div id="modalAdd" class="modal">
+    <div class="modal-box">
+        <h2>Tambah Jenis Hewan</h2>
+
+        <form action="{{ route('dokter.jenis.store') }}" method="POST" id="formAddJenis">
+            @csrf
+
+            <label>Nama Jenis Hewan *</label>
+            <input type="text" name="nama_jenis_hewan" id="add_nama" required placeholder="Contoh: Kucing">
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeAddModal()" class="btn-cancel">Batal</button>
+                <button type="submit" class="btn-submit">Simpan</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<!-- ==================== MODAL EDIT ==================== -->
+<div id="modalEdit" class="modal">
+    <div class="modal-box">
+        <h2>Edit Jenis Hewan</h2>
+
+        <form method="POST" action="" id="formEditJenis">
+            @csrf
+
+            <input type="hidden" name="edit_id" id="edit_id">
+
+            <label>Nama Jenis Hewan *</label>
+            <input type="text" name="nama_jenis_hewan" id="edit_nama" required>
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeEditModal()" class="btn-cancel">Batal</button>
+                <button type="submit" class="btn-submit">Simpan</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<!-- DELETE FORM -->
+<form id="deleteForm" method="GET" style="display:none;"></form>
+
+<script>
+function searchTable() {
+    const input = document.getElementById("searchInput");
+    const filter = input.value.toUpperCase();
+    const table = document.getElementById("jenisTable");
+    const tr = table.getElementsByTagName("tr");
+
+    for (let i = 1; i < tr.length; i++) {
+        const tdNama = tr[i].getElementsByTagName("td")[2];
+        if (tdNama) {
+            const textValue = tdNama.textContent || tdNama.innerText;
+            tr[i].style.display = textValue.toUpperCase().indexOf(filter) > -1 ? "" : "none";
+        }
+    }
+}
+
+function openAddModal() {
+    document.getElementById('add_nama').value = '';
+    document.getElementById('modalAdd').classList.add('show');
+}
+
+function closeAddModal() {
+    document.getElementById('modalAdd').classList.remove('show');
+    document.getElementById('formAddJenis').reset();
+}
+
+function openEditModal(id, nama) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_nama').value = nama;
+
+    const form = document.getElementById('formEditJenis');
+    form.action = '/dokter/jenis/update/' + id;
+
+    document.getElementById('modalEdit').classList.add('show');
+}
+
+function closeEditModal() {
+    document.getElementById('modalEdit').classList.remove('show');
+    document.getElementById('formEditJenis').reset();
+}
+
+function deleteJenis(id) {
+    if (confirm('Yakin hapus jenis hewan ini?')) {
+        const form = document.getElementById('deleteForm');
+        form.action = '/dokter/jenis/hapus/' + id;
+        form.submit();
+    }
+}
+
+window.onclick = function(event) {
+    const modalAdd = document.getElementById('modalAdd');
+    const modalEdit = document.getElementById('modalEdit');
+
+    if (event.target === modalAdd) closeAddModal();
+    if (event.target === modalEdit) closeEditModal();
+}
+</script>
 
 </body>
 </html>

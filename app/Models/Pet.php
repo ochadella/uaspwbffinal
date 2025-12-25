@@ -29,4 +29,10 @@ class Pet extends Model
     {
         return $this->belongsTo(RasHewan::class, 'idras_hewan', 'idras_hewan');
     }
+
+    // 🔥 RELASI YANG WAJIB ADA UNTUK AUTO-FILL PEMILIK
+    public function pemilik()
+    {
+        return $this->belongsTo(Pemilik::class, 'idpemilik', 'idpemilik');
+    }
 }

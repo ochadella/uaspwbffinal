@@ -542,18 +542,20 @@
     <div class="nav-center">
         <div class="nav-search">
             <i class="bi bi-search"></i>
-            <input type="text" placeholder="Cari menu atau data user...">
+            <input type="text" placeholder="Cari menu atau data...">
         </div>
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -629,6 +631,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -664,7 +678,7 @@
                 <tbody>
                     @foreach($users as $u)
                     <tr>
-                        <td>{{ $u->iduser }}</td>
+                        <td>{{ $loop->iteration }}</td>
                         <td>{{ $u->nama }}</td>
                         <td>{{ $u->email }}</td>
                         <td>{{ $u->role ?? '-' }}</td>
@@ -726,11 +740,9 @@
 
             <label>Role:</label>
             <select name="role" id="add_role" required>
-                <option value="">Pilih Role</option>
-                <option value="admin">Admin</option>
-                <option value="dokter">Dokter</option>
-                <option value="perawat">Perawat</option>
-                <option value="resepsionis">Resepsionis</option>
+                @foreach ($roles as $role)
+                    <option value="{{ $role->nama_role }}">{{ $role->nama_role }}</option>
+                @endforeach
             </select>
 
             <div class="modal-buttons">
@@ -762,11 +774,9 @@
 
             <label>Role:</label>
             <select name="role" id="edit_role" required>
-                <option value="">Pilih Role</option>
-                <option value="admin">Admin</option>
-                <option value="dokter">Dokter</option>
-                <option value="perawat">Perawat</option>
-                <option value="resepsionis">Resepsionis</option>
+                @foreach ($roles as $role)
+                    <option value="{{ $role->nama_role }}">{{ $role->nama_role }}</option>
+                @endforeach
             </select>
 
             <div class="modal-buttons">
@@ -860,12 +870,14 @@ document.querySelector('#formAddUser').addEventListener('submit', function(e) {
     const formData = new FormData(this);
     
     fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
+    method: 'POST',
+    body: formData,
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    }
+})
+
     .then(response => response.json())
     .then(data => {
         if (data.success) {
@@ -889,12 +901,14 @@ document.querySelector('#modalEdit form').addEventListener('submit', function(e)
     const formData = new FormData(this);
     
     fetch(this.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
+    method: 'POST',
+    body: formData,
+    headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    }
+})
+
     .then(response => response.json())
     .then(data => {
         if (data.success) {

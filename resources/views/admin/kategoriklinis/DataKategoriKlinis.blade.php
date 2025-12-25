@@ -541,13 +541,15 @@
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -622,6 +624,18 @@
                 <i class="bi bi-code-square"></i> <span>Kode Tindakan</span>
             </a>
         </div>
+
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
 
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
@@ -720,6 +734,50 @@
         </form>
     </div>
 </div>
+
+<!-- ==================== MODAL EDIT ==================== -->
+@if (!empty($editData))
+<div id="modalEdit" class="modal" style="display:flex;">
+    <div class="modal-box">
+
+        <h2>Edit Kategori Klinis</h2>
+
+            <form method="POST"
+                action="{{ route('admin.kategoriklinis.update', $editData['idkategori_klinis']) }}"
+                autocomplete="off">
+
+                @csrf
+                <input type="hidden" name="_method" value="POST">
+
+
+            <label>Nama Kategori Klinis:</label>
+            <input type="text" name="nama_kategori_klinis"
+                value="{{ $editData['nama_kategori_klinis'] }}" required>
+
+            <label>Deskripsi:</label>
+            <input type="text" name="deskripsi"
+                value="{{ $editData['deskripsi'] }}" required>
+
+            <div class="modal-buttons">
+                <a href="{{ route('admin.kategoriklinis.data') }}" class="btn-cancel">
+                    Batal
+                </a>
+                <button type="submit" class="btn-submit">
+                    Update
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+@endif
+
+<script>
+    @if (!empty($editData))
+        document.getElementById('modalEdit').style.display = 'flex';
+    @endif
+</script>
+
 
 </body>
 </html>

@@ -563,22 +563,20 @@
     <div class="nav-center">
         <div class="nav-search">
             <i class="bi bi-search"></i>
-            <input
-                type="text"
-                id="searchInput"
-                placeholder="Cari menu atau data perawat..."
-                onkeyup="searchTable()">
+            <input type="text" placeholder="Cari username perawat...">
         </div>
     </div>
 
     <div class="nav-right">
-        <div class="user-info">
-            <div class="user-avatar">{{ $initial }}</div>
-            <div>
-                <div class="user-name">{{ $displayName }}</div>
-                <div class="user-role">{{ $displayRole }}</div>
+        <a href="{{ route('admin.profile') }}" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; transition: opacity 0.2s;">
+            <div class="user-info">
+                <div class="user-avatar">{{ $initial }}</div>
+                <div>
+                    <div class="user-name">{{ $displayName }}</div>
+                    <div class="user-role">{{ $displayRole }}</div>
+                </div>
             </div>
-        </div>
+        </a>
         <a href="{{ route('logout') }}" class="btn-logout">
             <i class="bi bi-box-arrow-right"></i> Logout
         </a>
@@ -654,6 +652,18 @@
             </a>
         </div>
 
+            <div class="sidebar-section-title">Manajemen Jadwal</div>
+            <div class="sidebar-menu">
+                <a href="{{ route('admin.jadwal.perawat') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-check"></i> <span>Jadwal Perawat</span>
+                </a>
+                <a href="{{ route('admin.jadwal.dokter') }}" class="sidebar-link">
+                    <i class="bi bi-calendar2-event"></i> <span>Jadwal Dokter</span>
+                </a>
+            </div>
+
+            <div class="sidebar-bottom">
+
         <div class="sidebar-bottom">
             &copy; {{ date('Y') }} Klinik Hewan
         </div>
@@ -679,6 +689,7 @@
                 <thead>
                     <tr>
                         <th>No</th>
+                        <th>ID</th>
                         <th>Nama</th>
                         <th>Email</th>
                         <th>Status</th>
@@ -691,6 +702,7 @@
                     @foreach($perawat as $p)
                     <tr>
                         <td>{{ $no++ }}</td>
+                        <td>{{ $loop->iteration }}</td>
                         <td>{{ $p->nama }}</td>
                         <td>{{ $p->email }}</td>
 
@@ -704,30 +716,29 @@
 
                         <td>
                             <div class="action-icons">
-                                <!-- EDIT (MODAL) -->
+                                <!-- EDIT -->
                                 <a href="javascript:void(0)"
-                                   onclick="openEditModal({{ $p->iduser }}, @json($p->nama), @json($p->email), @json($p->status))"
-                                   class="icon-btn"
-                                   title="Edit Perawat">
+                                onclick="openEditModal({{ $p->iduser }}, @json($p->nama), @json($p->email), @json($p->status))"
+                                class="icon-btn"
+                                title="Edit Perawat">
                                     <i class="bi bi-pencil-square"></i>
                                 </a>
 
                                 <!-- RESET PASSWORD -->
                                 <a href="{{ route('admin.perawat.reset', ['id' => $p->iduser]) }}"
-                                   onclick="return confirm('Reset password perawat ini ke 123456?')"
-                                   class="icon-btn"
-                                   title="Reset Password">
+                                onclick="return confirm('Reset password perawat ini ke 123456?')"
+                                class="icon-btn"
+                                title="Reset Password">
                                     <i class="bi bi-key-fill"></i>
                                 </a>
 
                                 <!-- HAPUS -->
                                 <a href="{{ route('admin.perawat.delete', ['id' => $p->iduser]) }}"
-                                   onclick="return confirm('Hapus perawat ini?')"
-                                   class="icon-btn"
-                                   title="Hapus Perawat">
-                                    <i class="bi bi-trash-fill" style="color:red;"></i>
+                                onclick="return confirm('Hapus perawat ini?')"
+                                class="icon-btn"
+                                title="Hapus Perawat">
+                                    <i class="bi bi-trash"></i>
                                 </a>
-
                             </div>
                         </td>
                     </tr>

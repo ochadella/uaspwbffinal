@@ -44,6 +44,10 @@ class DokterController extends Controller
         // === ⚠ WAJIB: GENERATE iduser MANUAL ===
         $nextId = (User::max('iduser') ?? 0) + 1;
 
+        $nextId = User::max("iduser") + 1;
+        $nextId = User::max("iduser") + 1;
+        $nextId = User::max("iduser") + 1;
+        $nextId = User::max("iduser") + 1;
         User::create([
             'iduser'   => $nextId,
             'nama'     => $request->nama,

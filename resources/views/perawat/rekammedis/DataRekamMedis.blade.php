@@ -289,8 +289,8 @@ if (isset($_GET['hapus'])) {
         <tbody>
           <?php while ($row = $result->fetch_assoc()): ?>
             <tr>
-              <td><?= htmlspecialchars($row['idrekam_medis']) ?></td>
-              <td><?= htmlspecialchars($row['idreservasi_dokter']) ?></td>
+              <td>{{ $loop->iteration }}</td>
+              <td>{{ $loop->iteration }}</td>
               <td><?= htmlspecialchars($row['anamnesa']) ?></td>
               <td><?= htmlspecialchars($row['diagnosa']) ?></td>
               <td><?= htmlspecialchars($row['temuan_klinis']) ?></td>

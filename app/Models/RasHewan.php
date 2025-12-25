@@ -10,9 +10,17 @@ class RasHewan extends Model
     use HasFactory;
 
     protected $table = 'ras_hewan';
+    protected $primaryKey = 'idras_hewan';
+    public $timestamps = false;
 
     protected $fillable = [
         'nama_ras',
-        'jenis_id'
+        'idjenis_hewan'
     ];
+
+    // 🔥 RELASI WAJIB ADA (INILAH YANG KAMU BUTUHKAN)
+    public function jenis()
+    {
+        return $this->belongsTo(JenisHewan::class, 'idjenis_hewan', 'idjenis_hewan');
+    }
 }
